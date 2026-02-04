@@ -1,0 +1,496 @@
+# Google Stitch プロトタイプ作成ガイド
+
+## Stitchの使い方まとめ
+
+調査結果から、効果的なStitch活用のポイントは以下の通り：
+
+```mermaid
+flowchart LR
+    A[1. 高レベルプロンプト] --> B[2. 画面別に細分化]
+    B --> C[3. 1回1変更で反復]
+    C --> D[4. コード/画像出力]
+    
+    style A fill:#E3F2FD
+    style B fill:#BBDEFB
+    style C fill:#90CAF9
+    style D fill:#64B5F6
+```
+
+**重要なルール：**
+- 1プロンプト = 1〜2変更（複数変更を混ぜるとレイアウトが壊れる）
+- 各画面を個別に生成してから組み合わせる
+- 成功した画面はスクリーンショットを保存しておく
+- 形容詞でトーン（ダーク、ミニマル等）を明示する
+
+---
+
+## TierHub 画面別プロンプト集
+
+以下のプロンプトを[Google Stitch](https://stitch.withgoogle.com/)に順番に入力していく。
+
+---
+
+### 画面1: ログイン画面
+
+```
+Context:
+Design a mobile app login screen for "TierHub" - a tier list creation and social sharing app where users create rankings for games, anime, and other content.
+
+User:
+Young adults (20-30s) who enjoy creating and sharing tier lists about games, anime, and pop culture. Tech-savvy, prefer quick onboarding.
+
+Goal of the screen:
+Allow users to quickly sign in using social authentication (Google, Apple) without friction.
+
+Screen type:
+Login / Onboarding (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Top section: App logo and tagline "Create. Share. Rank Everything."
+- Middle section: Social login buttons (Google, Apple)
+- Bottom section: Terms of service link
+
+Components:
+- Large centered app logo
+- "Sign in with Google" button with Google icon
+- "Sign in with Apple" button with Apple icon
+- Small text link for terms and privacy policy
+
+Visual direction:
+- Dark theme (dark gray background #212121)
+- Minimal, clean, modern
+- Accent color: Blue (#2196F3) for interactive elements
+- Simple sans-serif font
+- No heavy illustrations
+
+Constraints:
+- One-hand usage
+- Large touch targets for buttons (minimum 48px height)
+- Accessible contrast ratios (WCAG 2.1 AA)
+
+Output expectation:
+Generate a clean, dark-themed mobile login screen that emphasizes simplicity and quick social sign-in.
+```
+
+---
+
+### 画面2: ホーム画面（自分のTIER表一覧）
+
+```
+Context:
+Design the home screen for "TierHub" - a tier list creation app. This is the main dashboard showing the user's own tier lists.
+
+User:
+Young adults who actively create tier lists and want quick access to their creations.
+
+Goal of the screen:
+- Display user's tier list collection in an organized grid
+- Provide easy access to create new tier lists
+- Show basic stats (total lists, likes received)
+
+Screen type:
+Home / Dashboard with Tab Navigation (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Sticky header: "My Tier Lists" title + user avatar
+- Stats row: Total lists count, Total likes received
+- Main content: Grid of tier list cards (2 columns)
+- Bottom: Tab bar navigation (Home, Timeline, Search, Notifications, Profile)
+- Floating action button (FAB): "+" to create new tier list
+
+Components:
+- Header with title and small circular avatar
+- Horizontal stats bar with icons
+- Card grid where each card shows:
+  - Tier list thumbnail (preview of S/A/B/C/D/F rows)
+  - Title
+  - Category tag (e.g., "Game", "Anime")
+  - Like count and comment count
+- Bottom tab bar with 5 icons
+- Circular FAB button in bottom-right corner
+
+Visual direction:
+- Dark theme (background #121212, cards #1E1E1E)
+- Clean, minimal design
+- Blue accent (#2196F3) for FAB and active tab
+- Tier row colors visible in card thumbnails (S=red, A=orange, B=yellow, etc.)
+- Subtle shadows on cards
+
+Constraints:
+- Scrollable grid layout
+- Cards should be tappable (show hover/press state)
+- FAB should float above content
+
+Output expectation:
+Generate a dark-themed home screen with a grid of tier list cards, clear navigation, and prominent create button.
+```
+
+---
+
+### 画面3: TIER表作成画面
+
+```
+Context:
+Design the tier list creation/editing screen for "TierHub". This is where users drag and drop items into tier rows to create rankings.
+
+User:
+Users who want to rank items (games, anime characters, etc.) by dragging them into S/A/B/C/D/F tiers.
+
+Goal of the screen:
+- Allow users to organize items into 6 tier levels via drag and drop
+- Provide an item pool at the bottom for unranked items
+- Enable saving and publishing the tier list
+
+Screen type:
+Editor / Creation screen (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Header: Back button, "New Tier List" title, Save button
+- Title input field
+- Main area: 6 horizontal tier rows (S, A, B, C, D, F)
+- Bottom section: Item pool (unranked items)
+- Add item button
+
+Components:
+- Navigation header with back and save actions
+- Text input for tier list title
+- 6 tier rows, each containing:
+  - Left label with tier letter (S/A/B/C/D/F) with distinct background color
+  - Horizontal scrollable area for item thumbnails
+- Item pool section at bottom:
+  - Label "Items"
+  - Grid of draggable item thumbnails
+- "Add Item" button (opens item picker)
+
+Visual direction:
+- Dark theme (background #121212)
+- Tier label colors:
+  - S: #FF7F7F (red)
+  - A: #FFBF7F (orange)
+  - B: #FFDF7F (yellow)
+  - C: #FFFF7F (light yellow)
+  - D: #BFFF7F (light green)
+  - F: #7FBFFF (light blue)
+- Item thumbnails are 64x64px squares with rounded corners
+- Clean separation between tiers
+
+Constraints:
+- Tier rows must be clearly distinguishable
+- Items should look draggable
+- Sufficient touch targets for mobile interaction
+
+Output expectation:
+Generate a tier list editor screen similar to TierMaker.com style, with distinct colored tier rows and a drag-and-drop feel, in dark theme.
+```
+
+---
+
+### 画面4: TIER表詳細画面
+
+```
+Context:
+Design the tier list detail/view screen for "TierHub". Users view completed tier lists here and can interact with them.
+
+User:
+Users browsing tier lists created by themselves or others.
+
+Goal of the screen:
+- Display the complete tier list with all ranked items
+- Show creator info and engagement metrics
+- Allow interactions: like, comment, share
+
+Screen type:
+Detail / Content View (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Header: Back button, share button, more options (3 dots)
+- Creator info: Avatar, username, post date
+- Tier list title and category tag
+- Main content: 6 tier rows with items (read-only view)
+- Engagement bar: Like button with count, Comment button with count
+- Comments section preview (first 2-3 comments)
+
+Components:
+- Navigation header with actions
+- User info row (avatar, name, timestamp)
+- Title with category chip
+- Tier board display (S/A/B/C/D/F rows)
+- Horizontal interaction bar
+- Comment preview list
+- "View all comments" button
+
+Visual direction:
+- Dark theme
+- Same tier colors as creation screen
+- Subtle card elevation for the tier board
+- Like button: heart icon, turns red when liked
+- Clean typography hierarchy
+
+Constraints:
+- Scrollable content
+- Tier board should be compact but readable
+- Clear visual distinction between content and actions
+
+Output expectation:
+Generate a clean tier list viewing screen with social features visible, maintaining the signature tier color scheme in dark theme.
+```
+
+---
+
+### 画面5: タイムライン画面
+
+```
+Context:
+Design the timeline/feed screen for "TierHub". Shows tier lists from followed users.
+
+User:
+Users who want to discover and engage with tier lists from people they follow.
+
+Goal of the screen:
+- Display a vertical feed of tier lists from followed users
+- Show enough preview to decide whether to tap for details
+- Enable quick interactions (like) without opening detail
+
+Screen type:
+Feed / Timeline (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Header: "Timeline" title
+- Feed: Vertical list of tier list cards
+- Each card shows:
+  - Creator info (avatar, name, time)
+  - Tier list preview (compressed view of tiers)
+  - Title and category
+  - Like and comment counts
+- Bottom tab bar (same as home)
+
+Components:
+- Simple header
+- Feed cards with:
+  - User row (avatar + name + timestamp)
+  - Tier list mini-preview (showing just S and A tier items)
+  - Title text
+  - Category chip
+  - Interaction row (heart icon + count, comment icon + count)
+- Pull-to-refresh indicator
+
+Visual direction:
+- Dark theme
+- Cards with subtle borders or shadows
+- Tier preview shows colored tier labels
+- Consistent spacing between cards
+
+Constraints:
+- Optimized for scrolling
+- Cards should load quickly (lazy load images)
+- Tap anywhere on card to open detail
+
+Output expectation:
+Generate a social media-style feed of tier list cards in dark theme, optimized for vertical scrolling.
+```
+
+---
+
+### 画面6: プロフィール画面
+
+```
+Context:
+Design the user profile screen for "TierHub".
+
+User:
+Users viewing their own or others' profiles.
+
+Goal of the screen:
+- Display user info and stats
+- Show user's tier list collection
+- Enable follow/unfollow action
+
+Screen type:
+Profile (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Header: Back button (if viewing other user), settings gear (if own profile)
+- Profile section:
+  - Large avatar
+  - Display name
+  - Bio text
+  - Stats row: Tier lists count, Followers, Following
+  - Follow button (if other user) / Edit profile button (if own)
+- Tab bar: "Tier Lists" | "Liked"
+- Content: Grid of tier list cards (same as home)
+
+Components:
+- Profile header area
+- Circular avatar (80px)
+- Name and bio text
+- Horizontal stats with labels
+- Action button (Follow or Edit)
+- Segmented control for tabs
+- Grid of tier list cards
+
+Visual direction:
+- Dark theme
+- Blue accent for Follow button
+- Avatar with subtle border
+- Clear stat numbers
+
+Constraints:
+- Scrollable content below profile header
+- Profile header can collapse on scroll
+
+Output expectation:
+Generate a user profile screen with clear stats, follow functionality, and tier list gallery in dark theme.
+```
+
+---
+
+### 画面7: 投票・ヒートマップ画面（Phase 2用）
+
+```
+Context:
+Design the voting/heatmap screen for "TierHub". Shows aggregated voting results for items in a category.
+
+User:
+Users who want to see how the community ranks specific items.
+
+Goal of the screen:
+- Display items with their vote distribution across tiers
+- Visualize where most users placed each item
+- Allow users to cast their own vote
+
+Screen type:
+Analytics / Voting (iOS-style mobile UI)
+
+Layout & hierarchy:
+- Header: "Community Rankings" + category name
+- Filter/sort options
+- Item list where each item shows:
+  - Item thumbnail and name
+  - Heatmap bar showing vote distribution
+  - Dominant tier indicator
+  - "Vote" button if user hasn't voted
+
+Components:
+- Header with category selector
+- List of items with:
+  - Square thumbnail
+  - Item name
+  - Horizontal heatmap bar (segmented by S/A/B/C/D/F colors)
+  - Percentage labels
+  - Vote CTA button
+
+Visual direction:
+- Dark theme
+- Heatmap uses tier colors (S=red through F=blue)
+- Bar segments sized by percentage
+- Highlight user's own vote if cast
+
+Constraints:
+- Clear visual hierarchy
+- Heatmap bars must be readable at small size
+- Touch target for voting
+
+Output expectation:
+Generate a voting results screen with horizontal heatmap bars showing vote distribution per item, in dark theme.
+```
+
+---
+
+## プロトタイプ作成の進め方
+
+### Step 1: Stitchにアクセス
+[https://stitch.withgoogle.com/](https://stitch.withgoogle.com/)にアクセスし、Googleアカウントでログイン。
+
+### Step 2: 画面を1つずつ生成
+
+```mermaid
+flowchart TB
+    subgraph Generation["生成フェーズ"]
+        G1[1. ログイン画面] --> G2[2. ホーム画面]
+        G2 --> G3[3. TIER表作成画面]
+        G3 --> G4[4. TIER表詳細画面]
+        G4 --> G5[5. タイムライン画面]
+        G5 --> G6[6. プロフィール画面]
+    end
+    
+    subgraph Refinement["調整フェーズ"]
+        R1[ダークテーマ確認]
+        R2[TIER色の調整]
+        R3[タッチターゲット確認]
+    end
+    
+    subgraph Export["書き出し"]
+        E1[スクリーンショット保存]
+        E2[View Codeで参考コード取得]
+    end
+    
+    Generation --> Refinement
+    Refinement --> Export
+```
+
+### Step 3: 調整プロンプト例
+
+生成後、以下のような調整プロンプトを**1つずつ**入力していく：
+
+```
+# 色の調整
+Change the background to darker gray (#121212) and ensure cards use #1E1E1E.
+
+# ボタンサイズの調整
+Make all buttons at least 48px in height for better touch targets.
+
+# フォント調整
+Use a clean sans-serif font with 16px base size for body text.
+
+# TIER色の統一
+Ensure tier colors are: S=#FF7F7F, A=#FFBF7F, B=#FFDF7F, C=#FFFF7F, D=#BFFF7F, F=#7FBFFF
+```
+
+### Step 4: 出力の活用
+
+1. **スクリーンショット保存**：各画面を画像として保存
+2. **View Code**：参考としてHTML/TailwindCSSコードを取得
+3. **Cursor + Claude Code連携**：保存した画像をClaudeに渡してReact Nativeコードを生成
+
+---
+
+## Cursor + Claude Codeでの実装フロー
+
+Stitchで生成した画面を実際のReact Nativeコードに変換する流れ：
+
+```mermaid
+flowchart LR
+    A[Stitchで画面生成] --> B[スクリーンショット保存]
+    B --> C[Cursorで新規ファイル作成]
+    C --> D[Claude Codeに画像を渡す]
+    D --> E[React Nativeコード生成]
+    E --> F[Expoで実機確認]
+    F --> G[調整・修正]
+```
+
+**Claude Codeへの指示例：**
+
+```
+この画像はTierHubアプリのホーム画面のデザインです。
+以下の仕様でReact Native + Expoのコードを生成してください：
+
+- TypeScriptを使用
+- スタイルは StyleSheet.create で定義
+- ダークテーマ対応（useTheme フックを使用）
+- コンポーネントは src/components 以下に配置
+- 画面は app/(main)/(tabs)/index.tsx に配置
+
+ディレクトリ構造は以下に従ってください：
+[要求定義書のディレクトリ構造を貼り付け]
+```
+
+---
+
+## 次のアクション
+
+1. **今すぐ**: [Google Stitch](https://stitch.withgoogle.com/)にアクセス
+2. **画面1から順番に**プロンプトを入力して生成
+3. **各画面のスクリーンショットを保存**（重要！）
+4. **生成した画面を共有してくれれば**、そこからReact Nativeの実装コードを詳細に書き出せる
+
+Stitchで生成した画面ができたら、ここに共有してくれ。そこから実装フェーズに進もう。

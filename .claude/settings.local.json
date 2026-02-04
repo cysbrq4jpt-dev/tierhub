@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-expo-app@latest . --template expo-template-blank-typescript)",
+      "Bash(npm install:*)",
+      "Bash(npm start)",
+      "Bash(npx expo start:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run web:*)",
+      "Bash(npx expo install:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\kmats\\Dropbox\\Tierhub\\app\\main\\tier"
+    ]
+  }
+}

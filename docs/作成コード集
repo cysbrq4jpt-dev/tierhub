@@ -1,0 +1,2632 @@
+# 詳細技術設計書：TierHub
+
+## 1. プロジェクト構成
+
+### 1.1 ディレクトリ構造
+
+```
+tierhub/
+├── app/                          # Expo Router のページ
+│   ├── (auth)/                   # 認証グループ
+│   │   ├── _layout.tsx
+│   │   ├── login.tsx
+│   │   └── register.tsx
+│   ├── (main)/                   # メイングループ（認証必須）
+│   │   ├── _layout.tsx
+│   │   ├── (tabs)/               # タブナビゲーション
+│   │   │   ├── _layout.tsx
+│   │   │   ├── index.tsx         # ホーム（自分のTIER表一覧）
+│   │   │   ├── timeline.tsx      # タイムライン
+│   │   │   ├── search.tsx        # 検索・探索
+│   │   │   ├── notifications.tsx # 通知
+│   │   │   └── profile.tsx       # マイプロフィール
+│   │   ├── tier/
+│   │   │   ├── create.tsx        # TIER表作成
+│   │   │   ├── [id]/
+│   │   │   │   ├── index.tsx     # TIER表詳細
+│   │   │   │   ├── edit.tsx      # TIER表編集
+│   │   │   │   └── comments.tsx  # コメント一覧
+│   │   ├── user/
+│   │   │   ├── [id]/
+│   │   │   │   ├── index.tsx     # ユーザープロフィール
+│   │   │   │   ├── followers.tsx # フォロワー一覧
+│   │   │   │   └── following.tsx # フォロー一覧
+│   │   ├── category/
+│   │   │   ├── index.tsx         # カテゴリ一覧
+│   │   │   └── [id].tsx          # カテゴリ詳細
+│   │   └── ranking/
+│   │       └── index.tsx         # ランキング
+│   ├── _layout.tsx               # ルートレイアウト
+│   └── index.tsx                 # エントリーポイント
+│
+├── src/
+│   ├── components/               # コンポーネント
+│   │   ├── common/               # 共通コンポーネント
+│   │   │   ├── Button/
+│   │   │   │   ├── Button.tsx
+│   │   │   │   ├── Button.styles.ts
+│   │   │   │   └── index.ts
+│   │   │   ├── Input/
+│   │   │   ├── Avatar/
+│   │   │   ├── Card/
+│   │   │   ├── Modal/
+│   │   │   ├── Loading/
+│   │   │   └── ErrorBoundary/
+│   │   ├── tier/                 # TIER表関連
+│   │   │   ├── TierBoard/
+│   │   │   │   ├── TierBoard.tsx
+│   │   │   │   ├── TierBoard.styles.ts
+│   │   │   │   ├── TierRow.tsx
+│   │   │   │   ├── TierItem.tsx
+│   │   │   │   ├── ItemPool.tsx
+│   │   │   │   └── index.ts
+│   │   │   ├── TierCard/
+│   │   │   ├── TierPreview/
+│   │   │   └── TierHeatmap/
+│   │   ├── social/               # SNS関連
+│   │   │   ├── CommentThread/
+│   │   │   ├── CommentItem/
+│   │   │   ├── LikeButton/
+│   │   │   ├── ShareButton/
+│   │   │   ├── FollowButton/
+│   │   │   └── UserCard/
+│   │   ├── search/               # 検索関連
+│   │   │   ├── SearchBar/
+│   │   │   ├── SearchResults/
+│   │   │   └── CategoryFilter/
+│   │   └── layout/               # レイアウト
+│   │       ├── Header/
+│   │       ├── TabBar/
+│   │       └── SafeAreaWrapper/
+│   │
+│   ├── features/                 # 機能モジュール（ドメイン別）
+│   │   ├── auth/
+│   │   │   ├── hooks/
+│   │   │   │   ├── useAuth.ts
+│   │   │   │   ├── useLogin.ts
+│   │   │   │   └── useLogout.ts
+│   │   │   ├── services/
+│   │   │   │   └── authService.ts
+│   │   │   ├── types/
+│   │   │   │   └── auth.types.ts
+│   │   │   └── index.ts
+│   │   ├── tier/
+│   │   │   ├── hooks/
+│   │   │   │   ├── useTierList.ts
+│   │   │   │   ├── useTierCreate.ts
+│   │   │   │   ├── useTierUpdate.ts
+│   │   │   │   ├── useTierDelete.ts
+│   │   │   │   └── useTierDragDrop.ts
+│   │   │   ├── services/
+│   │   │   │   └── tierService.ts
+│   │   │   ├── types/
+│   │   │   │   └── tier.types.ts
+│   │   │   ├── utils/
+│   │   │   │   ├── tierHelpers.ts
+│   │   │   │   └── imageExport.ts
+│   │   │   └── index.ts
+│   │   ├── user/
+│   │   │   ├── hooks/
+│   │   │   │   ├── useUser.ts
+│   │   │   │   ├── useFollow.ts
+│   │   │   │   └── useProfile.ts
+│   │   │   ├── services/
+│   │   │   │   └── userService.ts
+│   │   │   ├── types/
+│   │   │   │   └── user.types.ts
+│   │   │   └── index.ts
+│   │   ├── social/
+│   │   │   ├── hooks/
+│   │   │   │   ├── useComments.ts
+│   │   │   │   ├── useLike.ts
+│   │   │   │   └── useShare.ts
+│   │   │   ├── services/
+│   │   │   │   ├── commentService.ts
+│   │   │   │   └── likeService.ts
+│   │   │   ├── types/
+│   │   │   │   └── social.types.ts
+│   │   │   └── index.ts
+│   │   ├── category/
+│   │   │   ├── hooks/
+│   │   │   │   ├── useCategories.ts
+│   │   │   │   └── useItems.ts
+│   │   │   ├── services/
+│   │   │   │   └── categoryService.ts
+│   │   │   ├── types/
+│   │   │   │   └── category.types.ts
+│   │   │   └── index.ts
+│   │   ├── timeline/
+│   │   │   ├── hooks/
+│   │   │   │   └── useTimeline.ts
+│   │   │   ├── services/
+│   │   │   │   └── timelineService.ts
+│   │   │   └── index.ts
+│   │   └── ranking/
+│   │       ├── hooks/
+│   │       │   └── useRanking.ts
+│   │       ├── services/
+│   │       │   └── rankingService.ts
+│   │       └── index.ts
+│   │
+│   ├── hooks/                    # グローバルフック
+│   │   ├── useAppState.ts
+│   │   ├── useNetworkStatus.ts
+│   │   ├── useTheme.ts
+│   │   └── useKeyboard.ts
+│   │
+│   ├── stores/                   # 状態管理（Zustand）
+│   │   ├── authStore.ts
+│   │   ├── tierStore.ts
+│   │   ├── uiStore.ts
+│   │   └── index.ts
+│   │
+│   ├── services/                 # 共通サービス
+│   │   ├── firebase/
+│   │   │   ├── config.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── firestore.ts
+│   │   │   └── storage.ts
+│   │   ├── api/
+│   │   │   ├── client.ts
+│   │   │   ├── gameApi.ts         # IGDB/RAWG連携
+│   │   │   └── animeApi.ts        # MAL/AniList連携
+│   │   └── imageService.ts
+│   │
+│   ├── utils/                    # ユーティリティ
+│   │   ├── constants.ts
+│   │   ├── helpers.ts
+│   │   ├── validation.ts
+│   │   ├── formatters.ts
+│   │   └── errorHandler.ts
+│   │
+│   ├── types/                    # グローバル型定義
+│   │   ├── global.d.ts
+│   │   ├── navigation.types.ts
+│   │   └── common.types.ts
+│   │
+│   ├── theme/                    # テーマ設定
+│   │   ├── colors.ts
+│   │   ├── typography.ts
+│   │   ├── spacing.ts
+│   │   ├── shadows.ts
+│   │   ├── darkTheme.ts
+│   │   ├── lightTheme.ts
+│   │   └── index.ts
+│   │
+│   ├── i18n/                     # 国際化（将来対応）
+│   │   ├── locales/
+│   │   │   ├── ja.json
+│   │   │   └── en.json
+│   │   └── index.ts
+│   │
+│   └── assets/                   # 静的アセット
+│       ├── images/
+│       ├── icons/
+│       └── fonts/
+│
+├── functions/                    # Firebase Cloud Functions
+│   ├── src/
+│   │   ├── index.ts
+│   │   ├── triggers/
+│   │   │   ├── onTierCreated.ts
+│   │   │   ├── onCommentCreated.ts
+│   │   │   └── onFollowCreated.ts
+│   │   ├── scheduled/
+│   │   │   └── updateRankings.ts
+│   │   └── callable/
+│   │       ├── exportTierImage.ts
+│   │       └── fetchExternalItems.ts
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── firebase/                     # Firebase設定
+│   ├── firestore.rules
+│   ├── firestore.indexes.json
+│   └── storage.rules
+│
+├── __tests__/                    # テスト
+│   ├── components/
+│   ├── features/
+│   ├── hooks/
+│   └── utils/
+│
+├── .env.example
+├── .eslintrc.js
+├── .prettierrc
+├── app.json
+├── babel.config.js
+├── eas.json
+├── metro.config.js
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+---
+
+## 2. データモデル設計
+
+### 2.1 Firestore コレクション構造
+
+```mermaid
+erDiagram
+    users ||--o{ tierLists : creates
+    users ||--o{ comments : writes
+    users ||--o{ likes : gives
+    users ||--o{ follows : "follows/followed"
+    tierLists ||--o{ comments : has
+    tierLists ||--o{ likes : receives
+    tierLists }|--|| categories : belongsTo
+    tierLists ||--o{ tierItems : contains
+    categories ||--o{ masterItems : has
+    tierItems }o--o| masterItems : references
+
+    users {
+        string id PK
+        string email
+        string displayName
+        string photoURL
+        string bio
+        int followersCount
+        int followingCount
+        int tierListsCount
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    tierLists {
+        string id PK
+        string userId FK
+        string categoryId FK
+        string title
+        string description
+        map tiers
+        boolean isPublic
+        int likesCount
+        int commentsCount
+        int viewsCount
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    tierItems {
+        string id PK
+        string tierListId FK
+        string masterItemId FK
+        string tier
+        int order
+        string customLabel
+        string customImageUrl
+    }
+
+    categories {
+        string id PK
+        string name
+        string description
+        string iconUrl
+        int tierListsCount
+        boolean isActive
+        timestamp createdAt
+    }
+
+    masterItems {
+        string id PK
+        string categoryId FK
+        string name
+        string imageUrl
+        string externalId
+        string externalSource
+        map metadata
+        timestamp createdAt
+    }
+
+    comments {
+        string id PK
+        string tierListId FK
+        string userId FK
+        string content
+        int likesCount
+        timestamp createdAt
+        timestamp updatedAt
+    }
+
+    likes {
+        string id PK
+        string targetType
+        string targetId FK
+        string userId FK
+        timestamp createdAt
+    }
+
+    follows {
+        string id PK
+        string followerId FK
+        string followingId FK
+        timestamp createdAt
+    }
+
+    votes {
+        string id PK
+        string categoryId FK
+        string masterItemId FK
+        string userId FK
+        string votedTier
+        timestamp createdAt
+    }
+```
+
+### 2.2 TypeScript型定義
+
+```typescript
+// src/features/user/types/user.types.ts
+
+export interface User {
+  id: string;
+  email: string;
+  displayName: string;
+  photoURL: string | null;
+  bio: string;
+  followersCount: number;
+  followingCount: number;
+  tierListsCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserProfile extends User {
+  isFollowing?: boolean;
+  isOwnProfile?: boolean;
+}
+
+export interface UpdateUserInput {
+  displayName?: string;
+  photoURL?: string;
+  bio?: string;
+}
+```
+
+```typescript
+// src/features/tier/types/tier.types.ts
+
+export const TIER_RANKS = ['S', 'A', 'B', 'C', 'D', 'F'] as const;
+export type TierRank = typeof TIER_RANKS[number];
+
+export interface TierItem {
+  id: string;
+  tierListId: string;
+  masterItemId: string | null;  // null = カスタムアイテム
+  tier: TierRank;
+  order: number;
+  customLabel: string | null;
+  customImageUrl: string | null;
+  // 結合データ
+  masterItem?: MasterItem;
+}
+
+export interface TierData {
+  [key in TierRank]: TierItem[];
+}
+
+export interface TierList {
+  id: string;
+  userId: string;
+  categoryId: string;
+  title: string;
+  description: string;
+  tiers: TierData;
+  isPublic: boolean;
+  likesCount: number;
+  commentsCount: number;
+  viewsCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  // 結合データ
+  user?: User;
+  category?: Category;
+  isLiked?: boolean;
+}
+
+export interface CreateTierListInput {
+  categoryId: string;
+  title: string;
+  description?: string;
+  tiers: TierData;
+  isPublic: boolean;
+}
+
+export interface UpdateTierListInput {
+  title?: string;
+  description?: string;
+  tiers?: TierData;
+  isPublic?: boolean;
+}
+
+// ドラッグ&ドロップ用
+export interface DragItem {
+  id: string;
+  index: number;
+  tier: TierRank | 'pool';  // 'pool' = 未分類エリア
+}
+
+export interface DropResult {
+  itemId: string;
+  fromTier: TierRank | 'pool';
+  toTier: TierRank | 'pool';
+  newIndex: number;
+}
+```
+
+```typescript
+// src/features/category/types/category.types.ts
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  iconUrl: string;
+  tierListsCount: number;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+export interface MasterItem {
+  id: string;
+  categoryId: string;
+  name: string;
+  imageUrl: string;
+  externalId: string | null;
+  externalSource: 'igdb' | 'rawg' | 'mal' | 'anilist' | 'custom' | null;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+}
+```
+
+```typescript
+// src/features/social/types/social.types.ts
+
+export interface Comment {
+  id: string;
+  tierListId: string;
+  userId: string;
+  content: string;
+  likesCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  // 結合データ
+  user?: User;
+  isLiked?: boolean;
+}
+
+export interface CreateCommentInput {
+  tierListId: string;
+  content: string;
+}
+
+export interface Like {
+  id: string;
+  targetType: 'tierList' | 'comment';
+  targetId: string;
+  userId: string;
+  createdAt: Date;
+}
+
+export interface Follow {
+  id: string;
+  followerId: string;
+  followingId: string;
+  createdAt: Date;
+}
+```
+
+```typescript
+// src/features/ranking/types/ranking.types.ts
+
+export interface TierVote {
+  id: string;
+  categoryId: string;
+  masterItemId: string;
+  userId: string;
+  votedTier: TierRank;
+  createdAt: Date;
+}
+
+export interface VoteDistribution {
+  masterItemId: string;
+  masterItem: MasterItem;
+  distribution: {
+    [key in TierRank]: number;  // パーセンテージ
+  };
+  totalVotes: number;
+  dominantTier: TierRank;
+}
+
+export interface CollectiveTierList {
+  categoryId: string;
+  category: Category;
+  items: VoteDistribution[];
+  generatedAt: Date;
+}
+```
+
+---
+
+## 3. 状態管理設計
+
+### 3.1 Zustand Store 構成
+
+```typescript
+// src/stores/authStore.ts
+
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User } from '@/features/user/types/user.types';
+
+interface AuthState {
+  // State
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+
+  // Actions
+  setUser: (user: User | null) => void;
+  setLoading: (isLoading: boolean) => void;
+  setError: (error: string | null) => void;
+  logout: () => void;
+  updateProfile: (updates: Partial<User>) => void;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      // Initial State
+      user: null,
+      isAuthenticated: false,
+      isLoading: true,
+      error: null,
+
+      // Actions
+      setUser: (user) =>
+        set({
+          user,
+          isAuthenticated: !!user,
+          isLoading: false,
+          error: null,
+        }),
+
+      setLoading: (isLoading) => set({ isLoading }),
+
+      setError: (error) => set({ error, isLoading: false }),
+
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        }),
+
+      updateProfile: (updates) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        })),
+    }),
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({ user: state.user }),
+    }
+  )
+);
+```
+
+```typescript
+// src/stores/tierStore.ts
+
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import {
+  TierList,
+  TierItem,
+  TierData,
+  TierRank,
+  TIER_RANKS,
+  DropResult,
+} from '@/features/tier/types/tier.types';
+
+interface TierEditorState {
+  // State
+  categoryId: string | null;
+  title: string;
+  description: string;
+  isPublic: boolean;
+  tiers: TierData;
+  pool: TierItem[];  // 未分類アイテム
+  isDirty: boolean;
+  isSaving: boolean;
+
+  // Actions
+  initializeEditor: (categoryId: string) => void;
+  loadTierList: (tierList: TierList, poolItems: TierItem[]) => void;
+  resetEditor: () => void;
+  setTitle: (title: string) => void;
+  setDescription: (description: string) => void;
+  setIsPublic: (isPublic: boolean) => void;
+  addItemToPool: (item: TierItem) => void;
+  removeItem: (itemId: string) => void;
+  moveItem: (result: DropResult) => void;
+  reorderWithinTier: (tier: TierRank | 'pool', fromIndex: number, toIndex: number) => void;
+  setSaving: (isSaving: boolean) => void;
+}
+
+const createEmptyTiers = (): TierData => {
+  return TIER_RANKS.reduce((acc, rank) => {
+    acc[rank] = [];
+    return acc;
+  }, {} as TierData);
+};
+
+export const useTierEditorStore = create<TierEditorState>()(
+  immer((set, get) => ({
+    // Initial State
+    categoryId: null,
+    title: '',
+    description: '',
+    isPublic: true,
+    tiers: createEmptyTiers(),
+    pool: [],
+    isDirty: false,
+    isSaving: false,
+
+    // Actions
+    initializeEditor: (categoryId) =>
+      set((state) => {
+        state.categoryId = categoryId;
+        state.title = '';
+        state.description = '';
+        state.isPublic = true;
+        state.tiers = createEmptyTiers();
+        state.pool = [];
+        state.isDirty = false;
+      }),
+
+    loadTierList: (tierList, poolItems) =>
+      set((state) => {
+        state.categoryId = tierList.categoryId;
+        state.title = tierList.title;
+        state.description = tierList.description;
+        state.isPublic = tierList.isPublic;
+        state.tiers = tierList.tiers;
+        state.pool = poolItems;
+        state.isDirty = false;
+      }),
+
+    resetEditor: () =>
+      set((state) => {
+        state.categoryId = null;
+        state.title = '';
+        state.description = '';
+        state.isPublic = true;
+        state.tiers = createEmptyTiers();
+        state.pool = [];
+        state.isDirty = false;
+        state.isSaving = false;
+      }),
+
+    setTitle: (title) =>
+      set((state) => {
+        state.title = title;
+        state.isDirty = true;
+      }),
+
+    setDescription: (description) =>
+      set((state) => {
+        state.description = description;
+        state.isDirty = true;
+      }),
+
+    setIsPublic: (isPublic) =>
+      set((state) => {
+        state.isPublic = isPublic;
+        state.isDirty = true;
+      }),
+
+    addItemToPool: (item) =>
+      set((state) => {
+        state.pool.push(item);
+        state.isDirty = true;
+      }),
+
+    removeItem: (itemId) =>
+      set((state) => {
+        // プールから削除
+        state.pool = state.pool.filter((item) => item.id !== itemId);
+        // 各TIERから削除
+        TIER_RANKS.forEach((rank) => {
+          state.tiers[rank] = state.tiers[rank].filter(
+            (item) => item.id !== itemId
+          );
+        });
+        state.isDirty = true;
+      }),
+
+    moveItem: (result) =>
+      set((state) => {
+        const { itemId, fromTier, toTier, newIndex } = result;
+
+        // 移動元からアイテムを取得して削除
+        let movedItem: TierItem | undefined;
+
+        if (fromTier === 'pool') {
+          const index = state.pool.findIndex((item) => item.id === itemId);
+          if (index !== -1) {
+            [movedItem] = state.pool.splice(index, 1);
+          }
+        } else {
+          const index = state.tiers[fromTier].findIndex(
+            (item) => item.id === itemId
+          );
+          if (index !== -1) {
+            [movedItem] = state.tiers[fromTier].splice(index, 1);
+          }
+        }
+
+        if (!movedItem) return;
+
+        // 移動先に挿入
+        movedItem.tier = toTier === 'pool' ? movedItem.tier : toTier;
+
+        if (toTier === 'pool') {
+          state.pool.splice(newIndex, 0, movedItem);
+        } else {
+          state.tiers[toTier].splice(newIndex, 0, movedItem);
+        }
+
+        // orderを再計算
+        if (toTier !== 'pool') {
+          state.tiers[toTier].forEach((item, idx) => {
+            item.order = idx;
+          });
+        }
+
+        state.isDirty = true;
+      }),
+
+    reorderWithinTier: (tier, fromIndex, toIndex) =>
+      set((state) => {
+        const items = tier === 'pool' ? state.pool : state.tiers[tier];
+        const [movedItem] = items.splice(fromIndex, 1);
+        items.splice(toIndex, 0, movedItem);
+
+        // orderを再計算
+        if (tier !== 'pool') {
+          state.tiers[tier].forEach((item, idx) => {
+            item.order = idx;
+          });
+        }
+
+        state.isDirty = true;
+      }),
+
+    setSaving: (isSaving) => set((state) => { state.isSaving = isSaving; }),
+  }))
+);
+```
+
+```typescript
+// src/stores/uiStore.ts
+
+import { create } from 'zustand';
+import { Appearance, ColorSchemeName } from 'react-native';
+
+type ThemeMode = 'light' | 'dark' | 'system';
+
+interface UIState {
+  // Theme
+  themeMode: ThemeMode;
+  colorScheme: ColorSchemeName;
+
+  // Modals
+  isItemPickerVisible: boolean;
+  isShareModalVisible: boolean;
+  isConfirmModalVisible: boolean;
+  confirmModalConfig: {
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null;
+
+  // Actions
+  setThemeMode: (mode: ThemeMode) => void;
+  updateColorScheme: () => void;
+  showItemPicker: () => void;
+  hideItemPicker: () => void;
+  showShareModal: () => void;
+  hideShareModal: () => void;
+  showConfirmModal: (config: {
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }) => void;
+  hideConfirmModal: () => void;
+}
+
+export const useUIStore = create<UIState>((set, get) => ({
+  // Initial State
+  themeMode: 'system',
+  colorScheme: Appearance.getColorScheme(),
+
+  isItemPickerVisible: false,
+  isShareModalVisible: false,
+  isConfirmModalVisible: false,
+  confirmModalConfig: null,
+
+  // Actions
+  setThemeMode: (mode) => {
+    set({ themeMode: mode });
+    get().updateColorScheme();
+  },
+
+  updateColorScheme: () => {
+    const { themeMode } = get();
+    if (themeMode === 'system') {
+      set({ colorScheme: Appearance.getColorScheme() });
+    } else {
+      set({ colorScheme: themeMode });
+    }
+  },
+
+  showItemPicker: () => set({ isItemPickerVisible: true }),
+  hideItemPicker: () => set({ isItemPickerVisible: false }),
+
+  showShareModal: () => set({ isShareModalVisible: true }),
+  hideShareModal: () => set({ isShareModalVisible: false }),
+
+  showConfirmModal: (config) =>
+    set({ isConfirmModalVisible: true, confirmModalConfig: config }),
+  hideConfirmModal: () =>
+    set({ isConfirmModalVisible: false, confirmModalConfig: null }),
+}));
+```
+
+---
+
+## 4. Firebase サービス層
+
+### 4.1 Firebase 設定
+
+```typescript
+// src/services/firebase/config.ts
+
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
+import Constants from 'expo-constants';
+
+const firebaseConfig = {
+  apiKey: Constants.expoConfig?.extra?.firebaseApiKey,
+  authDomain: Constants.expoConfig?.extra?.firebaseAuthDomain,
+  projectId: Constants.expoConfig?.extra?.firebaseProjectId,
+  storageBucket: Constants.expoConfig?.extra?.firebaseStorageBucket,
+  messagingSenderId: Constants.expoConfig?.extra?.firebaseMessagingSenderId,
+  appId: Constants.expoConfig?.extra?.firebaseAppId,
+};
+
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let storage: FirebaseStorage;
+
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig);
+} else {
+  app = getApps()[0];
+}
+
+auth = getAuth(app);
+db = getFirestore(app);
+storage = getStorage(app);
+
+export { app, auth, db, storage };
+```
+
+### 4.2 認証サービス
+
+```typescript
+// src/services/firebase/auth.ts
+
+import {
+  signInWithCredential,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+  GoogleAuthProvider,
+  OAuthProvider,
+} from 'firebase/auth';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { auth, db } from './config';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { User } from '@/features/user/types/user.types';
+
+// Google Sign In
+export const signInWithGoogle = async (idToken: string): Promise<User> => {
+  const credential = GoogleAuthProvider.credential(idToken);
+  const result = await signInWithCredential(auth, credential);
+  return await getOrCreateUser(result.user);
+};
+
+// Apple Sign In
+export const signInWithApple = async (): Promise<User> => {
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+
+  const provider = new OAuthProvider('apple.com');
+  const oauthCredential = provider.credential({
+    idToken: credential.identityToken!,
+  });
+
+  const result = await signInWithCredential(auth, oauthCredential);
+
+  // Apple Sign Inでは名前が最初の1回しか取れないので保存
+  const displayName =
+    credential.fullName?.givenName && credential.fullName?.familyName
+      ? `${credential.fullName.givenName} ${credential.fullName.familyName}`
+      : undefined;
+
+  return await getOrCreateUser(result.user, displayName);
+};
+
+// ユーザー取得または作成
+const getOrCreateUser = async (
+  firebaseUser: FirebaseUser,
+  displayName?: string
+): Promise<User> => {
+  const userRef = doc(db, 'users', firebaseUser.uid);
+  const userSnap = await getDoc(userRef);
+
+  if (userSnap.exists()) {
+    return userSnap.data() as User;
+  }
+
+  // 新規ユーザー作成
+  const newUser: Omit<User, 'createdAt' | 'updatedAt'> & {
+    createdAt: ReturnType<typeof serverTimestamp>;
+    updatedAt: ReturnType<typeof serverTimestamp>;
+  } = {
+    id: firebaseUser.uid,
+    email: firebaseUser.email || '',
+    displayName: displayName || firebaseUser.displayName || 'ユーザー',
+    photoURL: firebaseUser.photoURL,
+    bio: '',
+    followersCount: 0,
+    followingCount: 0,
+    tierListsCount: 0,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(userRef, newUser);
+
+  return {
+    ...newUser,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as User;
+};
+
+// Sign Out
+export const signOut = async (): Promise<void> => {
+  await firebaseSignOut(auth);
+};
+
+// Auth State Observer
+export const subscribeToAuthState = (
+  callback: (user: User | null) => void
+): (() => void) => {
+  return onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+        callback(userSnap.data() as User);
+      } else {
+        callback(null);
+      }
+    } else {
+      callback(null);
+    }
+  });
+};
+```
+
+### 4.3 Firestore サービス
+
+```typescript
+// src/services/firebase/firestore.ts
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  DocumentSnapshot,
+  QueryConstraint,
+  serverTimestamp,
+  increment,
+  writeBatch,
+  onSnapshot,
+  Unsubscribe,
+} from 'firebase/firestore';
+import { db } from './config';
+
+// Generic CRUD Operations
+export const createDocument = async <T extends { id: string }>(
+  collectionName: string,
+  data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>
+): Promise<T> => {
+  const docRef = doc(collection(db, collectionName));
+  const now = serverTimestamp();
+
+  const documentData = {
+    ...data,
+    id: docRef.id,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await setDoc(docRef, documentData);
+
+  return {
+    ...documentData,
+    id: docRef.id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as T;
+};
+
+export const getDocument = async <T>(
+  collectionName: string,
+  documentId: string
+): Promise<T | null> => {
+  const docRef = doc(db, collectionName, documentId);
+  const docSnap = await getDoc(docRef);
+
+  if (docSnap.exists()) {
+    return convertTimestamps(docSnap.data()) as T;
+  }
+  return null;
+};
+
+export const updateDocument = async <T>(
+  collectionName: string,
+  documentId: string,
+  data: Partial<T>
+): Promise<void> => {
+  const docRef = doc(db, collectionName, documentId);
+  await updateDoc(docRef, {
+    ...data,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteDocument = async (
+  collectionName: string,
+  documentId: string
+): Promise<void> => {
+  const docRef = doc(db, collectionName, documentId);
+  await deleteDoc(docRef);
+};
+
+// Query with Pagination
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+}
+
+export const queryDocuments = async <T>(
+  collectionName: string,
+  constraints: QueryConstraint[],
+  pageSize: number = 20,
+  lastDocument?: DocumentSnapshot
+): Promise<PaginatedResult<T>> => {
+  const baseConstraints = [...constraints, limit(pageSize + 1)];
+
+  if (lastDocument) {
+    baseConstraints.push(startAfter(lastDocument));
+  }
+
+  const q = query(collection(db, collectionName), ...baseConstraints);
+  const snapshot = await getDocs(q);
+
+  const docs = snapshot.docs.slice(0, pageSize);
+  const hasMore = snapshot.docs.length > pageSize;
+
+  return {
+    data: docs.map((doc) => convertTimestamps(doc.data()) as T),
+    lastDoc: docs.length > 0 ? docs[docs.length - 1] : null,
+    hasMore,
+  };
+};
+
+// Real-time Subscription
+export const subscribeToDocument = <T>(
+  collectionName: string,
+  documentId: string,
+  callback: (data: T | null) => void
+): Unsubscribe => {
+  const docRef = doc(db, collectionName, documentId);
+  return onSnapshot(docRef, (docSnap) => {
+    if (docSnap.exists()) {
+      callback(convertTimestamps(docSnap.data()) as T);
+    } else {
+      callback(null);
+    }
+  });
+};
+
+export const subscribeToQuery = <T>(
+  collectionName: string,
+  constraints: QueryConstraint[],
+  callback: (data: T[]) => void
+): Unsubscribe => {
+  const q = query(collection(db, collectionName), ...constraints);
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map((doc) => convertTimestamps(doc.data()) as T);
+    callback(data);
+  });
+};
+
+// Batch Operations
+export const batchWrite = async (
+  operations: Array<{
+    type: 'set' | 'update' | 'delete';
+    collection: string;
+    id: string;
+    data?: Record<string, unknown>;
+  }>
+): Promise<void> => {
+  const batch = writeBatch(db);
+
+  operations.forEach((op) => {
+    const docRef = doc(db, op.collection, op.id);
+    switch (op.type) {
+      case 'set':
+        batch.set(docRef, { ...op.data, updatedAt: serverTimestamp() });
+        break;
+      case 'update':
+        batch.update(docRef, { ...op.data, updatedAt: serverTimestamp() });
+        break;
+      case 'delete':
+        batch.delete(docRef);
+        break;
+    }
+  });
+
+  await batch.commit();
+};
+
+// Counter Operations
+export const incrementCounter = async (
+  collectionName: string,
+  documentId: string,
+  field: string,
+  value: number = 1
+): Promise<void> => {
+  const docRef = doc(db, collectionName, documentId);
+  await updateDoc(docRef, {
+    [field]: increment(value),
+  });
+};
+
+// Utility: Convert Firestore Timestamps to Date
+const convertTimestamps = (data: Record<string, unknown>): Record<string, unknown> => {
+  const converted = { ...data };
+  Object.keys(converted).forEach((key) => {
+    const value = converted[key];
+    if (value && typeof value === 'object' && 'toDate' in value) {
+      converted[key] = (value as { toDate: () => Date }).toDate();
+    }
+  });
+  return converted;
+};
+```
+
+### 4.4 Storage サービス
+
+```typescript
+// src/services/firebase/storage.ts
+
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from 'firebase/storage';
+import { storage } from './config';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
+
+interface UploadOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+}
+
+const DEFAULT_OPTIONS: UploadOptions = {
+  maxWidth: 1024,
+  maxHeight: 1024,
+  quality: 0.8,
+};
+
+// 画像をリサイズして圧縮
+const processImage = async (
+  uri: string,
+  options: UploadOptions
+): Promise<string> => {
+  const { maxWidth, maxHeight, quality } = { ...DEFAULT_OPTIONS, ...options };
+
+  const result = await ImageManipulator.manipulateAsync(
+    uri,
+    [{ resize: { width: maxWidth, height: maxHeight } }],
+    {
+      compress: quality,
+      format: ImageManipulator.SaveFormat.JPEG,
+    }
+  );
+
+  return result.uri;
+};
+
+// 画像アップロード
+export const uploadImage = async (
+  localUri: string,
+  storagePath: string,
+  options?: UploadOptions
+): Promise<string> => {
+  // 画像を処理
+  const processedUri = await processImage(localUri, options || {});
+
+  // Blobに変換
+  const response = await fetch(processedUri);
+  const blob = await response.blob();
+
+  // アップロード
+  const storageRef = ref(storage, storagePath);
+  await uploadBytes(storageRef, blob);
+
+  // ダウンロードURLを取得
+  return await getDownloadURL(storageRef);
+};
+
+// プロフィール画像アップロード
+export const uploadProfileImage = async (
+  userId: string,
+  localUri: string
+): Promise<string> => {
+  const path = `users/${userId}/profile.jpg`;
+  return uploadImage(localUri, path, {
+    maxWidth: 512,
+    maxHeight: 512,
+    quality: 0.9,
+  });
+};
+
+// TIER表アイテム画像アップロード
+export const uploadTierItemImage = async (
+  userId: string,
+  tierListId: string,
+  itemId: string,
+  localUri: string
+): Promise<string> => {
+  const path = `tiers/${userId}/${tierListId}/${itemId}.jpg`;
+  return uploadImage(localUri, path, {
+    maxWidth: 256,
+    maxHeight: 256,
+    quality: 0.85,
+  });
+};
+
+// 画像削除
+export const deleteImage = async (storagePath: string): Promise<void> => {
+  const storageRef = ref(storage, storagePath);
+  await deleteObject(storageRef);
+};
+```
+
+---
+
+## 5. Feature層の実装例
+
+### 5.1 TIER表サービス
+
+```typescript
+// src/features/tier/services/tierService.ts
+
+import {
+  collection,
+  doc,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  writeBatch,
+} from 'firebase/firestore';
+import { db } from '@/services/firebase/config';
+import {
+  createDocument,
+  getDocument,
+  updateDocument,
+  deleteDocument,
+  queryDocuments,
+  incrementCounter,
+  PaginatedResult,
+} from '@/services/firebase/firestore';
+import {
+  TierList,
+  TierItem,
+  CreateTierListInput,
+  UpdateTierListInput,
+  TIER_RANKS,
+} from '../types/tier.types';
+
+const COLLECTION = 'tierLists';
+const ITEMS_COLLECTION = 'tierItems';
+
+// TIER表作成
+export const createTierList = async (
+  userId: string,
+  input: CreateTierListInput
+): Promise<TierList> => {
+  const batch = writeBatch(db);
+
+  // TIER表ドキュメント作成
+  const tierListRef = doc(collection(db, COLLECTION));
+  const tierListData = {
+    userId,
+    categoryId: input.categoryId,
+    title: input.title,
+    description: input.description || '',
+    isPublic: input.isPublic,
+    likesCount: 0,
+    commentsCount: 0,
+    viewsCount: 0,
+  };
+
+  batch.set(tierListRef, {
+    ...tierListData,
+    id: tierListRef.id,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  // TIERアイテムを作成
+  const allItems: TierItem[] = [];
+  TIER_RANKS.forEach((rank) => {
+    input.tiers[rank].forEach((item, index) => {
+      const itemRef = doc(collection(db, ITEMS_COLLECTION));
+      const itemData: TierItem = {
+        ...item,
+        id: itemRef.id,
+        tierListId: tierListRef.id,
+        tier: rank,
+        order: index,
+      };
+      batch.set(itemRef, itemData);
+      allItems.push(itemData);
+    });
+  });
+
+  // ユーザーのTIER表数をインクリメント
+  const userRef = doc(db, 'users', userId);
+  batch.update(userRef, { tierListsCount: increment(1) });
+
+  // カテゴリのTIER表数をインクリメント
+  const categoryRef = doc(db, 'categories', input.categoryId);
+  batch.update(categoryRef, { tierListsCount: increment(1) });
+
+  await batch.commit();
+
+  // 作成したTIER表を返す
+  const tiers = TIER_RANKS.reduce((acc, rank) => {
+    acc[rank] = allItems.filter((item) => item.tier === rank);
+    return acc;
+  }, {} as TierList['tiers']);
+
+  return {
+    ...tierListData,
+    id: tierListRef.id,
+    tiers,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+};
+
+// TIER表取得
+export const getTierList = async (id: string): Promise<TierList | null> => {
+  const tierList = await getDocument<Omit<TierList, 'tiers'>>(COLLECTION, id);
+  if (!tierList) return null;
+
+  // アイテムを取得
+  const itemsQuery = query(
+    collection(db, ITEMS_COLLECTION),
+    where('tierListId', '==', id),
+    orderBy('order')
+  );
+  const itemsSnapshot = await getDocs(itemsQuery);
+  const items = itemsSnapshot.docs.map((doc) => doc.data() as TierItem);
+
+  // TIERごとに整理
+  const tiers = TIER_RANKS.reduce((acc, rank) => {
+    acc[rank] = items.filter((item) => item.tier === rank);
+    return acc;
+  }, {} as TierList['tiers']);
+
+  return { ...tierList, tiers };
+};
+
+// ユーザーのTIER表一覧取得
+export const getUserTierLists = async (
+  userId: string,
+  pageSize: number = 20,
+  lastDoc?: unknown
+): Promise<PaginatedResult<TierList>> => {
+  return queryDocuments<TierList>(
+    COLLECTION,
+    [where('userId', '==', userId), orderBy('createdAt', 'desc')],
+    pageSize,
+    lastDoc as any
+  );
+};
+
+// タイムライン取得（フォロー中ユーザーの公開TIER表）
+export const getTimelineTierLists = async (
+  followingUserIds: string[],
+  pageSize: number = 20,
+  lastDoc?: unknown
+): Promise<PaginatedResult<TierList>> => {
+  if (followingUserIds.length === 0) {
+    return { data: [], lastDoc: null, hasMore: false };
+  }
+
+  // Firestoreの 'in' クエリは最大30要素
+  const chunkedIds = followingUserIds.slice(0, 30);
+
+  return queryDocuments<TierList>(
+    COLLECTION,
+    [
+      where('userId', 'in', chunkedIds),
+      where('isPublic', '==', true),
+      orderBy('createdAt', 'desc'),
+    ],
+    pageSize,
+    lastDoc as any
+  );
+};
+
+// カテゴリ別TIER表一覧取得
+export const getCategoryTierLists = async (
+  categoryId: string,
+  pageSize: number = 20,
+  lastDoc?: unknown
+): Promise<PaginatedResult<TierList>> => {
+  return queryDocuments<TierList>(
+    COLLECTION,
+    [
+      where('categoryId', '==', categoryId),
+      where('isPublic', '==', true),
+      orderBy('likesCount', 'desc'),
+    ],
+    pageSize,
+    lastDoc as any
+  );
+};
+
+// TIER表更新
+export const updateTierList = async (
+  id: string,
+  input: UpdateTierListInput
+): Promise<void> => {
+  // 基本情報の更新
+  const { tiers, ...basicInfo } = input;
+  if (Object.keys(basicInfo).length > 0) {
+    await updateDocument(COLLECTION, id, basicInfo);
+  }
+
+  // TIERアイテムの更新（必要な場合）
+  if (tiers) {
+    const batch = writeBatch(db);
+
+    // 既存アイテムを削除
+    const existingItemsQuery = query(
+      collection(db, ITEMS_COLLECTION),
+      where('tierListId', '==', id)
+    );
+    const existingItems = await getDocs(existingItemsQuery);
+    existingItems.docs.forEach((doc) => batch.delete(doc.ref));
+
+    // 新しいアイテムを作成
+    TIER_RANKS.forEach((rank) => {
+      tiers[rank].forEach((item, index) => {
+        const itemRef = doc(collection(db, ITEMS_COLLECTION));
+        batch.set(itemRef, {
+          ...item,
+          id: itemRef.id,
+          tierListId: id,
+          tier: rank,
+          order: index,
+        });
+      });
+    });
+
+    await batch.commit();
+  }
+};
+
+// TIER表削除
+export const deleteTierList = async (
+  id: string,
+  userId: string,
+  categoryId: string
+): Promise<void> => {
+  const batch = writeBatch(db);
+
+  // TIER表削除
+  batch.delete(doc(db, COLLECTION, id));
+
+  // アイテム削除
+  const itemsQuery = query(
+    collection(db, ITEMS_COLLECTION),
+    where('tierListId', '==', id)
+  );
+  const items = await getDocs(itemsQuery);
+  items.docs.forEach((doc) => batch.delete(doc.ref));
+
+  // コメント削除
+  const commentsQuery = query(
+    collection(db, 'comments'),
+    where('tierListId', '==', id)
+  );
+  const comments = await getDocs(commentsQuery);
+  comments.docs.forEach((doc) => batch.delete(doc.ref));
+
+  // いいね削除
+  const likesQuery = query(
+    collection(db, 'likes'),
+    where('targetId', '==', id),
+    where('targetType', '==', 'tierList')
+  );
+  const likes = await getDocs(likesQuery);
+  likes.docs.forEach((doc) => batch.delete(doc.ref));
+
+  // カウンター更新
+  batch.update(doc(db, 'users', userId), { tierListsCount: increment(-1) });
+  batch.update(doc(db, 'categories', categoryId), {
+    tierListsCount: increment(-1),
+  });
+
+  await batch.commit();
+};
+
+// 閲覧数インクリメント
+export const incrementViewCount = async (id: string): Promise<void> => {
+  await incrementCounter(COLLECTION, id, 'viewsCount');
+};
+```
+
+### 5.2 TIER表フック
+
+```typescript
+// src/features/tier/hooks/useTierList.ts
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  getTierList,
+  getUserTierLists,
+  getTimelineTierLists,
+  getCategoryTierLists,
+  createTierList,
+  updateTierList,
+  deleteTierList,
+  incrementViewCount,
+} from '../services/tierService';
+import { CreateTierListInput, UpdateTierListInput } from '../types/tier.types';
+import { useAuthStore } from '@/stores/authStore';
+
+// TIER表詳細取得
+export const useTierList = (id: string) => {
+  return useQuery({
+    queryKey: ['tierList', id],
+    queryFn: () => getTierList(id),
+    enabled: !!id,
+  });
+};
+
+// ユーザーのTIER表一覧
+export const useUserTierLists = (userId: string) => {
+  return useInfiniteQuery({
+    queryKey: ['userTierLists', userId],
+    queryFn: ({ pageParam }) => getUserTierLists(userId, 20, pageParam),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    enabled: !!userId,
+  });
+};
+
+// タイムライン
+export const useTimeline = (followingUserIds: string[]) => {
+  return useInfiniteQuery({
+    queryKey: ['timeline', followingUserIds],
+    queryFn: ({ pageParam }) =>
+      getTimelineTierLists(followingUserIds, 20, pageParam),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    enabled: followingUserIds.length > 0,
+  });
+};
+
+// カテゴリ別TIER表一覧
+export const useCategoryTierLists = (categoryId: string) => {
+  return useInfiniteQuery({
+    queryKey: ['categoryTierLists', categoryId],
+    queryFn: ({ pageParam }) =>
+      getCategoryTierLists(categoryId, 20, pageParam),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    enabled: !!categoryId,
+  });
+};
+
+// TIER表作成
+export const useCreateTierList = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation({
+    mutationFn: (input: CreateTierListInput) =>
+      createTierList(user!.id, input),
+    onSuccess: (newTierList) => {
+      // キャッシュを更新
+      queryClient.invalidateQueries({
+        queryKey: ['userTierLists', user!.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['categoryTierLists', newTierList.categoryId],
+      });
+    },
+  });
+};
+
+// TIER表更新
+export const useUpdateTierList = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      input,
+    }: {
+      id: string;
+      input: UpdateTierListInput;
+    }) => updateTierList(id, input),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['tierList', variables.id],
+      });
+    },
+  });
+};
+
+// TIER表削除
+export const useDeleteTierList = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuthStore();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      categoryId,
+    }: {
+      id: string;
+      categoryId: string;
+    }) => deleteTierList(id, user!.id, categoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['userTierLists', user!.id],
+      });
+    },
+  });
+};
+
+// 閲覧数インクリメント
+export const useIncrementViewCount = () => {
+  return useMutation({
+    mutationFn: (id: string) => incrementViewCount(id),
+  });
+};
+```
+
+```typescript
+// src/features/tier/hooks/useTierDragDrop.ts
+
+import { useCallback } from 'react';
+import { useTierEditorStore } from '@/stores/tierStore';
+import { TierRank, DropResult } from '../types/tier.types';
+
+export const useTierDragDrop = () => {
+  const { tiers, pool, moveItem, reorderWithinTier } = useTierEditorStore();
+
+  const handleDragEnd = useCallback(
+    (result: DropResult) => {
+      const { itemId, fromTier, toTier, newIndex } = result;
+
+      if (fromTier === toTier) {
+        // 同じTIER内での並び替え
+        const items = fromTier === 'pool' ? pool : tiers[fromTier];
+        const currentIndex = items.findIndex((item) => item.id === itemId);
+        if (currentIndex !== -1 && currentIndex !== newIndex) {
+          reorderWithinTier(fromTier, currentIndex, newIndex);
+        }
+      } else {
+        // 異なるTIER間の移動
+        moveItem(result);
+      }
+    },
+    [tiers, pool, moveItem, reorderWithinTier]
+  );
+
+  const getItemsForTier = useCallback(
+    (tier: TierRank | 'pool') => {
+      return tier === 'pool' ? pool : tiers[tier];
+    },
+    [tiers, pool]
+  );
+
+  return {
+    tiers,
+    pool,
+    handleDragEnd,
+    getItemsForTier,
+  };
+};
+```
+
+---
+
+## 6. UIコンポーネント実装
+
+### 6.1 テーマ設定
+
+```typescript
+// src/theme/colors.ts
+
+export const palette = {
+  // Primary
+  primary: {
+    50: '#E3F2FD',
+    100: '#BBDEFB',
+    200: '#90CAF9',
+    300: '#64B5F6',
+    400: '#42A5F5',
+    500: '#2196F3',
+    600: '#1E88E5',
+    700: '#1976D2',
+    800: '#1565C0',
+    900: '#0D47A1',
+  },
+
+  // TIER Colors
+  tier: {
+    S: '#FF7F7F',  // 赤
+    A: '#FFBF7F',  // オレンジ
+    B: '#FFDF7F',  // 黄
+    C: '#FFFF7F',  // ライトイエロー
+    D: '#BFFF7F',  // ライトグリーン
+    F: '#7FBFFF',  // ライトブルー
+  },
+
+  // Grayscale
+  gray: {
+    50: '#FAFAFA',
+    100: '#F5F5F5',
+    200: '#EEEEEE',
+    300: '#E0E0E0',
+    400: '#BDBDBD',
+    500: '#9E9E9E',
+    600: '#757575',
+    700: '#616161',
+    800: '#424242',
+    900: '#212121',
+  },
+
+  // Semantic
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
+  info: '#2196F3',
+
+  // Base
+  white: '#FFFFFF',
+  black: '#000000',
+  transparent: 'transparent',
+};
+
+export type PaletteColor = keyof typeof palette;
+export type TierColor = keyof typeof palette.tier;
+```
+
+```typescript
+// src/theme/lightTheme.ts
+
+import { palette } from './colors';
+
+export const lightTheme = {
+  colors: {
+    // Background
+    background: palette.white,
+    surface: palette.gray[50],
+    card: palette.white,
+
+    // Text
+    text: palette.gray[900],
+    textSecondary: palette.gray[600],
+    textDisabled: palette.gray[400],
+
+    // Primary
+    primary: palette.primary[500],
+    primaryLight: palette.primary[100],
+    primaryDark: palette.primary[700],
+
+    // Border
+    border: palette.gray[200],
+    borderLight: palette.gray[100],
+
+    // TIER
+    tier: palette.tier,
+
+    // Semantic
+    success: palette.success,
+    warning: palette.warning,
+    error: palette.error,
+    info: palette.info,
+
+    // Components
+    tabBar: palette.white,
+    tabBarInactive: palette.gray[400],
+    headerBackground: palette.white,
+    inputBackground: palette.gray[100],
+  },
+
+  shadows: {
+    sm: {
+      shadowColor: palette.black,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 2,
+    },
+    md: {
+      shadowColor: palette.black,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    lg: {
+      shadowColor: palette.black,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 8,
+    },
+  },
+};
+
+export type Theme = typeof lightTheme;
+```
+
+```typescript
+// src/theme/darkTheme.ts
+
+import { palette } from './colors';
+import { lightTheme, Theme } from './lightTheme';
+
+export const darkTheme: Theme = {
+  colors: {
+    // Background
+    background: palette.gray[900],
+    surface: palette.gray[800],
+    card: palette.gray[800],
+
+    // Text
+    text: palette.gray[50],
+    textSecondary: palette.gray[400],
+    textDisabled: palette.gray[600],
+
+    // Primary
+    primary: palette.primary[400],
+    primaryLight: palette.primary[800],
+    primaryDark: palette.primary[200],
+
+    // Border
+    border: palette.gray[700],
+    borderLight: palette.gray[800],
+
+    // TIER（ダークモードでも同じ色を使用）
+    tier: palette.tier,
+
+    // Semantic
+    success: palette.success,
+    warning: palette.warning,
+    error: palette.error,
+    info: palette.info,
+
+    // Components
+    tabBar: palette.gray[900],
+    tabBarInactive: palette.gray[500],
+    headerBackground: palette.gray[900],
+    inputBackground: palette.gray[800],
+  },
+
+  shadows: lightTheme.shadows,
+};
+```
+
+### 6.2 TierBoard コンポーネント
+
+```typescript
+// src/components/tier/TierBoard/TierBoard.tsx
+
+import React, { useCallback } from 'react';
+import { View, StyleSheet } from 'react-native';
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from 'react-native-draggable-flatlist';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { TierRow } from './TierRow';
+import { ItemPool } from './ItemPool';
+import { useTierDragDrop } from '@/features/tier/hooks/useTierDragDrop';
+import { useTheme } from '@/hooks/useTheme';
+import { TIER_RANKS, TierItem, TierRank } from '@/features/tier/types/tier.types';
+
+interface TierBoardProps {
+  editable?: boolean;
+  onItemPress?: (item: TierItem) => void;
+}
+
+export const TierBoard: React.FC<TierBoardProps> = ({
+  editable = false,
+  onItemPress,
+}) => {
+  const { theme } = useTheme();
+  const { tiers, pool, handleDragEnd, getItemsForTier } = useTierDragDrop();
+
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      <View style={[styles.board, { backgroundColor: theme.colors.surface }]}>
+        {/* TIER行 */}
+        {TIER_RANKS.map((rank) => (
+          <TierRow
+            key={rank}
+            rank={rank}
+            items={getItemsForTier(rank)}
+            editable={editable}
+            onDragEnd={(fromIndex, toIndex) => {
+              handleDragEnd({
+                itemId: tiers[rank][fromIndex].id,
+                fromTier: rank,
+                toTier: rank,
+                newIndex: toIndex,
+              });
+            }}
+            onItemPress={onItemPress}
+          />
+        ))}
+
+        {/* 未分類エリア（編集時のみ表示） */}
+        {editable && (
+          <ItemPool
+            items={pool}
+            onDragEnd={(fromIndex, toIndex) => {
+              handleDragEnd({
+                itemId: pool[fromIndex].id,
+                fromTier: 'pool',
+                toTier: 'pool',
+                newIndex: toIndex,
+              });
+            }}
+            onItemPress={onItemPress}
+          />
+        )}
+      </View>
+    </GestureHandlerRootView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  board: {
+    flex: 1,
+    padding: 8,
+    borderRadius: 8,
+  },
+});
+```
+
+```typescript
+// src/components/tier/TierBoard/TierRow.tsx
+
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import DraggableFlatList, {
+  RenderItemParams,
+  ScaleDecorator,
+} from 'react-native-draggable-flatlist';
+import { TierItem as TierItemComponent } from './TierItem';
+import { useTheme } from '@/hooks/useTheme';
+import { TierItem, TierRank } from '@/features/tier/types/tier.types';
+
+interface TierRowProps {
+  rank: TierRank;
+  items: TierItem[];
+  editable: boolean;
+  onDragEnd: (fromIndex: number, toIndex: number) => void;
+  onItemPress?: (item: TierItem) => void;
+}
+
+export const TierRow: React.FC<TierRowProps> = ({
+  rank,
+  items,
+  editable,
+  onDragEnd,
+  onItemPress,
+}) => {
+  const { theme } = useTheme();
+
+  const renderItem = useCallback(
+    ({ item, drag, isActive }: RenderItemParams<TierItem>) => (
+      <ScaleDecorator>
+        <TierItemComponent
+          item={item}
+          onLongPress={editable ? drag : undefined}
+          onPress={() => onItemPress?.(item)}
+          isActive={isActive}
+        />
+      </ScaleDecorator>
+    ),
+    [editable, onItemPress]
+  );
+
+  return (
+    <View style={styles.row}>
+      {/* TIERラベル */}
+      <View
+        style={[
+          styles.label,
+          { backgroundColor: theme.colors.tier[rank] },
+        ]}
+      >
+        <Text style={styles.labelText}>{rank}</Text>
+      </View>
+
+      {/* アイテムリスト */}
+      <View style={[styles.itemsContainer, { backgroundColor: theme.colors.card }]}>
+        {editable ? (
+          <DraggableFlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            onDragEnd={({ from, to }) => onDragEnd(from, to)}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {items.map((item) => (
+              <TierItemComponent
+                key={item.id}
+                item={item}
+                onPress={() => onItemPress?.(item)}
+              />
+            ))}
+          </ScrollView>
+        )}
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    height: 80,
+    marginBottom: 4,
+  },
+  label: {
+    width: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 4,
+  },
+  labelText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  itemsContainer: {
+    flex: 1,
+    marginLeft: 4,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+  },
+});
+```
+
+```typescript
+// src/components/tier/TierBoard/TierItem.tsx
+
+import React from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Pressable,
+} from 'react-native';
+import { useTheme } from '@/hooks/useTheme';
+import { TierItem as TierItemType } from '@/features/tier/types/tier.types';
+
+interface TierItemProps {
+  item: TierItemType;
+  onPress?: () => void;
+  onLongPress?: () => void;
+  isActive?: boolean;
+}
+
+export const TierItem: React.FC<TierItemProps> = ({
+  item,
+  onPress,
+  onLongPress,
+  isActive = false,
+}) => {
+  const { theme } = useTheme();
+
+  const imageUrl = item.customImageUrl || item.masterItem?.imageUrl;
+  const label = item.customLabel || item.masterItem?.name;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={onLongPress}
+      style={[
+        styles.container,
+        isActive && styles.active,
+        { backgroundColor: theme.colors.surface },
+      ]}
+    >
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.image} />
+      ) : (
+        <View style={[styles.placeholder, { backgroundColor: theme.colors.border }]}>
+          <Text
+            style={[styles.placeholderText, { color: theme.colors.textSecondary }]}
+            numberOfLines={2}
+          >
+            {label}
+          </Text>
+        </View>
+      )}
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: 64,
+    height: 64,
+    margin: 4,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  active: {
+    opacity: 0.8,
+    transform: [{ scale: 1.05 }],
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  placeholder: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 4,
+  },
+  placeholderText: {
+    fontSize: 10,
+    textAlign: 'center',
+  },
+});
+```
+
+### 6.3 画像書き出し機能
+
+```typescript
+// src/features/tier/utils/imageExport.ts
+
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import { RefObject } from 'react';
+import { View } from 'react-native';
+
+interface ExportOptions {
+  format?: 'png' | 'jpg';
+  quality?: number;
+  width?: number;
+}
+
+// TIER表をViewrefから画像として書き出し
+export const exportTierListAsImage = async (
+  viewRef: RefObject<View>,
+  options: ExportOptions = {}
+): Promise<string> => {
+  const { format = 'png', quality = 1.0, width = 1200 } = options;
+
+  try {
+    const uri = await captureRef(viewRef, {
+      format,
+      quality,
+      width,
+      result: 'tmpfile',
+    });
+
+    return uri;
+  } catch (error) {
+    console.error('Failed to capture tier list:', error);
+    throw error;
+  }
+};
+
+// 画像をSNSに共有
+export const shareTierListImage = async (
+  viewRef: RefObject<View>,
+  title: string
+): Promise<void> => {
+  try {
+    const uri = await exportTierListAsImage(viewRef);
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: title,
+      });
+    } else {
+      throw new Error('Sharing is not available on this device');
+    }
+  } catch (error) {
+    console.error('Failed to share tier list:', error);
+    throw error;
+  }
+};
+
+// 画像をローカルに保存
+export const saveTierListImage = async (
+  viewRef: RefObject<View>,
+  fileName: string
+): Promise<string> => {
+  try {
+    const uri = await exportTierListAsImage(viewRef);
+    const destinationUri = `${FileSystem.documentDirectory}${fileName}.png`;
+
+    await FileSystem.copyAsync({
+      from: uri,
+      to: destinationUri,
+    });
+
+    return destinationUri;
+  } catch (error) {
+    console.error('Failed to save tier list:', error);
+    throw error;
+  }
+};
+```
+
+---
+
+## 7. Firebase Security Rules
+
+```javascript
+// firebase/firestore.rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTierList() {
+      let data = request.resource.data;
+      return data.title.size() > 0 &&
+             data.title.size() <= 100 &&
+             data.categoryId.size() > 0;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) &&
+                       !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['id', 'createdAt', 'followersCount', 'followingCount', 'tierListsCount']);
+      allow delete: if false;
+    }
+
+    // Tier Lists Collection
+    match /tierLists/{tierListId} {
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       isValidTierList();
+      allow update: if isOwner(resource.data.userId) &&
+                       !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['id', 'userId', 'createdAt', 'likesCount', 'commentsCount', 'viewsCount']);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Tier Items Collection
+    match /tierItems/{itemId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Categories Collection
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if false; // 運営のみ（Admin SDK経由）
+    }
+
+    // Master Items Collection
+    match /masterItems/{itemId} {
+      allow read: if true;
+      allow write: if false; // 運営のみ
+    }
+
+    // Comments Collection
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.content.size() > 0 &&
+                       request.resource.data.content.size() <= 1000;
+      allow update: if isOwner(resource.data.userId) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['content', 'updatedAt']);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Likes Collection
+    match /likes/{likeId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow delete: if isOwner(resource.data.userId);
+      allow update: if false;
+    }
+
+    // Follows Collection
+    match /follows/{followId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       request.resource.data.followerId == request.auth.uid &&
+                       request.resource.data.followerId != request.resource.data.followingId;
+      allow delete: if isAuthenticated() &&
+                       resource.data.followerId == request.auth.uid;
+      allow update: if false;
+    }
+
+    // Votes Collection
+    match /votes/{voteId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+  }
+}
+```
+
+---
+
+## 8. 依存パッケージ一覧
+
+```json
+// package.json (主要な依存関係)
+
+{
+  "name": "tierhub",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    // Core
+    "expo": "~52.0.0",
+    "expo-router": "~4.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.0",
+    "react-dom": "18.3.1",
+
+    // Navigation
+    "@react-navigation/native": "^7.0.0",
+    "@react-navigation/bottom-tabs": "^7.0.0",
+
+    // Firebase
+    "firebase": "^11.0.0",
+    "@react-native-firebase/app": "^21.0.0",
+    "@react-native-firebase/auth": "^21.0.0",
+    "@react-native-firebase/firestore": "^21.0.0",
+    "@react-native-firebase/storage": "^21.0.0",
+
+    // State Management
+    "zustand": "^5.0.0",
+    "@tanstack/react-query": "^5.0.0",
+    "immer": "^10.0.0",
+
+    // UI Components
+    "react-native-draggable-flatlist": "^4.0.0",
+    "react-native-gesture-handler": "~2.20.0",
+    "react-native-reanimated": "~3.16.0",
+    "react-native-safe-area-context": "~4.12.0",
+    "react-native-screens": "~4.0.0",
+    "react-native-view-shot": "^4.0.0",
+
+    // Image
+    "expo-image": "~2.0.0",
+    "expo-image-picker": "~16.0.0",
+    "expo-image-manipulator": "~13.0.0",
+
+    // Auth
+    "expo-auth-session": "~6.0.0",
+    "expo-apple-authentication": "~7.0.0",
+    "expo-crypto": "~14.0.0",
+
+    // Storage
+    "@react-native-async-storage/async-storage": "^2.0.0",
+    "expo-file-system": "~18.0.0",
+    "expo-sharing": "~13.0.0",
+
+    // Utilities
+    "date-fns": "^4.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@types/react": "~18.3.0",
+    "typescript": "~5.6.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~8.0.0",
+    "prettier": "^3.0.0",
+    "jest": "^29.0.0",
+    "jest-expo": "~52.0.0",
+    "@testing-library/react-native": "^12.0.0"
+  }
+}
+```
+
+---
+
+## 9. 開発ロードマップ
+
+```mermaid
+gantt
+    title TierHub 開発ロードマップ
+    dateFormat  YYYY-MM-DD
+    
+    section Phase 1: MVP
+    プロジェクト初期設定           :p1_1, 2026-02-01, 3d
+    Firebase設定・認証実装         :p1_2, after p1_1, 5d
+    データモデル・Firestore設計    :p1_3, after p1_2, 3d
+    TIER表作成機能（D&D）          :p1_4, after p1_3, 7d
+    TIER表一覧・詳細画面           :p1_5, after p1_4, 5d
+    いいね・コメント機能           :p1_6, after p1_5, 5d
+    フォロー機能                   :p1_7, after p1_6, 3d
+    画像書き出し・共有             :p1_8, after p1_7, 3d
+    テスト・バグ修正               :p1_9, after p1_8, 5d
+    
+    section Phase 2: SNS強化
+    タイムライン実装               :p2_1, after p1_9, 5d
+    プッシュ通知                   :p2_2, after p2_1, 5d
+    投票・ヒートマップ             :p2_3, after p2_2, 7d
+    ランキング機能                 :p2_4, after p2_3, 5d
+    DM機能                         :p2_5, after p2_4, 5d
+    
+    section Phase 3: 集合知
+    みんなのTIER表生成             :p3_1, after p2_5, 7d
+    カテゴリ拡張                   :p3_2, after p3_1, 5d
+    外部API連携強化                :p3_3, after p3_2, 7d
+```
+
+---
+
+## 10. 初期コマンド（プロジェクト開始手順）
+
+```bash
+# 1. プロジェクト作成
+npx create-expo-app@latest tierhub --template expo-template-blank-typescript
+
+# 2. 必要なパッケージインストール
+cd tierhub
+npx expo install expo-router react-native-safe-area-context react-native-screens expo-linking expo-constants expo-status-bar react-native-gesture-handler react-native-reanimated
+
+# 3. Firebase関連
+npm install firebase
+npx expo install @react-native-async-storage/async-storage
+
+# 4. 状態管理
+npm install zustand immer @tanstack/react-query
+
+# 5. ドラッグ&ドロップ
+npm install react-native-draggable-flatlist
+
+# 6. 画像関連
+npx expo install expo-image expo-image-picker expo-image-manipulator expo-file-system expo-sharing react-native-view-shot
+
+# 7. 認証関連
+npx expo install expo-auth-session expo-apple-authentication expo-crypto
+
+# 8. 開発ツール
+npm install -D eslint eslint-config-expo prettier @types/react typescript
+
+# 9. Expo Router設定
+# app.json に以下を追加
+# "scheme": "tierhub"
+
+# 10. 起動
+npx expo start
+```
+
+---
+
+以上が詳細技術設計書だ。ディレクトリ構造、データモデル、状態管理、Firebase設定、コンポーネント実装、セキュリティルールまで網羅した。
+
+次のステップとして以下のどれを進めるか教えてほしい：
+
+1. **Stitchでのプロトタイプ作成**に進む
+2. **特定の画面のより詳細な実装コード**を書く
+3. **外部API連携（ゲーム/アニメDB）**の詳細設計
+4. **テスト戦略・CI/CD設定**の詳細化
