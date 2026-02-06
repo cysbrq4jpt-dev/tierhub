@@ -268,3 +268,55 @@ export const deleteTierList = async (
 export const incrementViewCount = async (id: string): Promise<void> => {
   await incrementCounter(COLLECTION, id, 'viewsCount');
 };
+
+// TIER表検索（タイトルで部分一致）
+export const searchTierLists = async (
+  searchQuery: string,
+  options?: {
+    categoryId?: string | null;
+    sortBy?: 'recent' | 'popular' | 'views';
+    pageSize?: number;
+    lastDoc?: unknown;
+  }
+): Promise<PaginatedResult<TierList>> => {
+  const { categoryId, sortBy = 'popular', pageSize = 20, lastDoc } = options || {};
+
+  const constraints: any[] = [where('isPublic', '==', true)];
+
+  // カテゴリーフィルター
+  if (categoryId) {
+    constraints.push(where('categoryId', '==', categoryId));
+  }
+
+  // Firestoreの制限: タイトル検索はプレフィックスマッチのみ
+  // 完全な全文検索にはAlgoliaやElasticsearchが必要
+  if (searchQuery.trim()) {
+    const searchTerm = searchQuery.trim();
+    constraints.push(where('title', '>=', searchTerm));
+    constraints.push(where('title', '<=', searchTerm + '\uf8ff'));
+  }
+
+  // ソート順
+  let orderByField: string;
+  let orderByDirection: 'asc' | 'desc' = 'desc';
+
+  switch (sortBy) {
+    case 'recent':
+      orderByField = 'createdAt';
+      break;
+    case 'views':
+      orderByField = 'viewsCount';
+      break;
+    case 'popular':
+    default:
+      orderByField = 'likesCount';
+      break;
+  }
+
+  // タイトル検索時はtitleでソートが必要（Firestoreの制約）
+  if (!searchQuery.trim()) {
+    constraints.push(orderBy(orderByField, orderByDirection));
+  }
+
+  return queryDocuments<TierList>(COLLECTION, constraints, pageSize, lastDoc as any);
+};

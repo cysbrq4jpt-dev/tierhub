@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,13 +17,29 @@ import { useAuthStore } from '@/stores/authStore';
 import { useCreateTierList } from '@/features/tier/hooks/useTierList';
 import { TierBoard, TierBoardRef } from '@/components/tier/TierBoard';
 import { TierItem as TierItemComponent } from '@/components/tier/TierItem';
+import { CategorySelector } from '@/components/category/CategorySelector';
+import { useCategory } from '@/features/category/hooks/useCategories';
 import { uploadTierItemImage } from '@/services/firebase/storage';
 import { TierItem } from '@/types/tier.types';
+
+const CATEGORY_ICONS: Record<string, string> = {
+  general: '📊',
+  games: '🎮',
+  anime: '🎌',
+  movies: '🎬',
+  music: '🎵',
+  food: '🍽️',
+  sports: '⚽',
+  travel: '✈️',
+  books: '📚',
+  tech: '💻',
+};
 
 export default function CreateTierList() {
   const router = useRouter();
   const { user } = useAuthStore();
   const {
+    categoryId,
     title,
     setTitle,
     description,
@@ -31,6 +47,7 @@ export default function CreateTierList() {
     pool,
     tiers,
     resetEditor,
+    initializeEditor,
     addItemToPool,
     moveItem,
   } = useTierEditorStore();
@@ -40,6 +57,25 @@ export default function CreateTierList() {
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemLabel, setNewItemLabel] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showCategorySelector, setShowCategorySelector] = useState(false);
+
+  // カテゴリー情報を取得
+  const { data: selectedCategory } = useCategory(categoryId || '');
+
+  // 初回マウント時にデフォルトカテゴリーを設定
+  useEffect(() => {
+    if (!categoryId) {
+      initializeEditor('general');
+    }
+  }, [categoryId, initializeEditor]);
+
+  // カテゴリー選択ハンドラー
+  const handleCategorySelect = useCallback(
+    (newCategoryId: string) => {
+      initializeEditor(newCategoryId);
+    },
+    [initializeEditor]
+  );
 
   // Firestore に保存
   const handleSave = useCallback(async () => {
@@ -48,23 +84,62 @@ export default function CreateTierList() {
       return;
     }
 
+    if (!categoryId) {
+      Alert.alert('エラー', 'カテゴリーを選択してください');
+      return;
+    }
+
+    if (!user) {
+      Alert.alert('エラー', 'ユーザー情報が取得できませんでした');
+      return;
+    }
+
     setIsSaving(true);
     try {
+      // 一時IDを生成（画像アップロード用）
+      const tempTierListId = `temp_${Date.now()}`;
+
+      // ローカル画像URIをFirebase Storageにアップロード
+      const tiersWithUploadedImages = { ...tiers };
+      for (const tierRank of Object.keys(tiersWithUploadedImages)) {
+        const items = tiersWithUploadedImages[tierRank];
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          // ローカル画像URI（file://またはローカルパス）をチェック
+          if (item.customImageUrl && item.customImageUrl.startsWith('file://')) {
+            try {
+              const uploadedUrl = await uploadTierItemImage(
+                user.id,
+                tempTierListId,
+                item.id,
+                item.customImageUrl
+              );
+              items[i] = { ...item, customImageUrl: uploadedUrl };
+            } catch (uploadError) {
+              console.error('Image upload failed for item:', item.id, uploadError);
+              // 画像アップロードに失敗した場合は画像なしで続行
+              items[i] = { ...item, customImageUrl: null };
+            }
+          }
+        }
+      }
+
       await createTierList.mutateAsync({
-        categoryId: 'general', // カテゴリ機能実装時に動的にする
+        categoryId,
         title: title.trim(),
         description: description.trim(),
-        tiers,
+        tiers: tiersWithUploadedImages,
         isPublic: true,
       });
       resetEditor();
       router.push('/main/tabs');
     } catch (error) {
+      console.error('Save failed:', error);
       Alert.alert('エラー', 'TIER表の保存に失敗しました。再試行してください。');
     } finally {
       setIsSaving(false);
     }
-  }, [title, description, tiers, createTierList, resetEditor, router]);
+  }, [title, description, tiers, categoryId, user, createTierList, resetEditor, router]);
 
   // テキストアイテム追加
   const handleAddItem = useCallback(() => {
@@ -150,6 +225,26 @@ export default function CreateTierList() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Category Selector */}
+        <TouchableOpacity
+          onPress={() => setShowCategorySelector(true)}
+          className="mx-4 mt-4 bg-[#1E1E1E] p-3 rounded-lg flex-row items-center justify-between"
+          activeOpacity={0.7}
+        >
+          <View className="flex-row items-center gap-2">
+            <Text className="text-2xl">
+              {selectedCategory ? CATEGORY_ICONS[selectedCategory.id] || '📂' : '📂'}
+            </Text>
+            <View>
+              <Text className="text-gray-500 text-xs">カテゴリー</Text>
+              <Text className="text-white font-semibold">
+                {selectedCategory?.name || 'カテゴリーを選択'}
+              </Text>
+            </View>
+          </View>
+          <Text className="text-gray-500">›</Text>
+        </TouchableOpacity>
 
         {/* Title Input */}
         <View className="p-4 border-b border-gray-800">
@@ -242,6 +337,14 @@ export default function CreateTierList() {
           </ScrollView>
         </View>
       </View>
+
+      {/* Category Selector Modal */}
+      <CategorySelector
+        visible={showCategorySelector}
+        selectedCategoryId={categoryId}
+        onSelect={handleCategorySelect}
+        onClose={() => setShowCategorySelector(false)}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -8,6 +8,7 @@ import {
   updateTierList,
   deleteTierList,
   incrementViewCount,
+  searchTierLists,
 } from '../services/tierService';
 import { CreateTierListInput, UpdateTierListInput } from '@/types/tier.types';
 import { useAuthStore } from '@/stores/authStore';
@@ -124,5 +125,27 @@ export const useDeleteTierList = () => {
 export const useIncrementViewCount = () => {
   return useMutation({
     mutationFn: (id: string) => incrementViewCount(id),
+  });
+};
+
+// TIER表検索
+export const useSearchTierLists = (
+  searchQuery: string,
+  categoryId?: string | null,
+  sortBy: 'recent' | 'popular' | 'views' = 'popular'
+) => {
+  return useInfiniteQuery({
+    queryKey: ['searchTierLists', searchQuery, categoryId, sortBy],
+    queryFn: ({ pageParam }) =>
+      searchTierLists(searchQuery, {
+        categoryId,
+        sortBy,
+        pageSize: 20,
+        lastDoc: pageParam,
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    initialPageParam: undefined,
+    enabled: searchQuery.trim().length > 0 || !!categoryId,
   });
 };

@@ -1,15 +1,20 @@
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useEffect } from 'react';
 import { useLogin } from '@/features/auth/hooks';
 import { useAuthStore } from '@/stores/authStore';
+import { getFirebaseErrorMessage } from '@/utils/errorHandling';
 
 export default function Login() {
   const { isLoading, handleGoogleLogin, handleAppleLogin, canUseApple } = useLogin();
   const { error } = useAuthStore();
 
   // エラーがあればアラートを表示
-  if (error) {
-    Alert.alert('Authentication Error', error);
-  }
+  useEffect(() => {
+    if (error) {
+      const errorInfo = getFirebaseErrorMessage(new Error(error));
+      Alert.alert(errorInfo.title, errorInfo.message);
+    }
+  }, [error]);
 
   return (
     <View className="flex-1 bg-[#212121] p-6 justify-between">

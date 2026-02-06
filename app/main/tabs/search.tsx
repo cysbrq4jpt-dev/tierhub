@@ -1,35 +1,49 @@
 import { View, Text, TextInput, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { useCategories } from '@/features/category/hooks/useCategories';
-import { usePopularTierLists, useRecentTierLists } from '@/features/timeline/hooks/useTimeline';
-import { useCategoryTierLists } from '@/features/tier/hooks/useTierList';
+import { usePopularTierLists } from '@/features/timeline/hooks/useTimeline';
+import { useSearchTierLists } from '@/features/tier/hooks/useTierList';
 import { TierCard } from '@/components/tier/TierCard';
 import { Category } from '@/features/category/types/category.types';
 import { TierList } from '@/types/tier.types';
+
+type SortOption = 'popular' | 'recent' | 'views';
 
 export default function Search() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('popular');
 
   const { data: categoriesResult, isLoading: isCategoriesLoading } = useCategories();
-  const popular = usePopularTierLists();
-  const categoryTierLists = useCategoryTierLists(selectedCategory || '');
-
   const categories: Category[] = categoriesResult?.data || [];
 
-  // 表示するTIER表リスト
-  const tierLists: TierList[] = selectedCategory
-    ? (categoryTierLists?.data?.pages.flatMap((page) => page.data) || [])
-    : (popular?.data?.pages.flatMap((page) => page.data) || []);
+  // 検索クエリまたはフィルターが有効な場合は検索を実行
+  const shouldSearch = searchQuery.trim().length > 0 || selectedCategory !== null;
 
-  const isLoading = selectedCategory ? categoryTierLists?.isLoading : popular?.isLoading;
-  const fetchNextPage = selectedCategory ? categoryTierLists?.fetchNextPage : popular?.fetchNextPage;
-  const hasNextPage = selectedCategory ? categoryTierLists?.hasNextPage : popular?.hasNextPage;
-  const isFetchingNextPage = selectedCategory
-    ? categoryTierLists?.isFetchingNextPage
-    : popular?.isFetchingNextPage;
+  // 検索結果
+  const searchResults = useSearchTierLists(
+    searchQuery,
+    selectedCategory,
+    sortBy
+  );
+
+  // デフォルト（人気のTIER表）
+  const popularTierLists = usePopularTierLists();
+
+  // 表示するデータソースを決定
+  const activeQuery = shouldSearch ? searchResults : popularTierLists;
+
+  const tierLists: TierList[] = useMemo(
+    () => activeQuery?.data?.pages.flatMap((page) => page.data) || [],
+    [activeQuery?.data]
+  );
+
+  const isLoading = activeQuery?.isLoading || false;
+  const fetchNextPage = activeQuery?.fetchNextPage;
+  const hasNextPage = activeQuery?.hasNextPage || false;
+  const isFetchingNextPage = activeQuery?.isFetchingNextPage || false;
 
   const renderFooter = () => {
     if (!isFetchingNextPage) return null;
@@ -43,8 +57,15 @@ export default function Search() {
   const renderEmpty = () => (
     <View className="items-center py-12">
       <Text className="text-gray-500 text-base">
-        {selectedCategory ? 'このカテゴリにTIER表がありません' : 'TIER表がありません'}
+        {shouldSearch
+          ? '検索結果が見つかりませんでした'
+          : 'TIER表がありません'}
       </Text>
+      {shouldSearch && (
+        <Text className="text-gray-600 text-sm mt-2">
+          別のキーワードやフィルターをお試しください
+        </Text>
+      )}
     </View>
   );
 
@@ -52,7 +73,7 @@ export default function Search() {
     <View>
       {/* カテゴリフィルター */}
       {!isCategoriesLoading && categories.length > 0 && (
-        <View className="px-4 py-3">
+        <View className="px-4 py-3 border-b border-gray-800">
           <Text className="text-gray-500 text-xs font-semibold mb-2">カテゴリ</Text>
           <View className="flex-row flex-wrap gap-2">
             <TouchableOpacity
@@ -90,12 +111,59 @@ export default function Search() {
         </View>
       )}
 
-      {/* セクションラベル */}
-      <View className="px-4 py-2 border-b border-gray-800">
-        <Text className="text-gray-500 text-sm font-semibold">
-          {selectedCategory ? 'カテゴリ別' : '人気'} TIER表
-        </Text>
+      {/* ソートオプション */}
+      <View className="px-4 py-3 border-b border-gray-800">
+        <Text className="text-gray-500 text-xs font-semibold mb-2">並び替え</Text>
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => setSortBy('popular')}
+            className={`px-3 py-1 rounded-full border ${
+              sortBy === 'popular'
+                ? 'bg-primary-500 border-primary-500'
+                : 'border-gray-600'
+            }`}
+          >
+            <Text className={`text-sm ${sortBy === 'popular' ? 'text-white' : 'text-gray-400'}`}>
+              👍 人気順
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setSortBy('recent')}
+            className={`px-3 py-1 rounded-full border ${
+              sortBy === 'recent'
+                ? 'bg-primary-500 border-primary-500'
+                : 'border-gray-600'
+            }`}
+          >
+            <Text className={`text-sm ${sortBy === 'recent' ? 'text-white' : 'text-gray-400'}`}>
+              🕒 新着順
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setSortBy('views')}
+            className={`px-3 py-1 rounded-full border ${
+              sortBy === 'views'
+                ? 'bg-primary-500 border-primary-500'
+                : 'border-gray-600'
+            }`}
+          >
+            <Text className={`text-sm ${sortBy === 'views' ? 'text-white' : 'text-gray-400'}`}>
+              👁️ 閲覧順
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* 結果ヘッダー */}
+      {shouldSearch && (
+        <View className="px-4 py-2 bg-[#1A1A1A]">
+          <Text className="text-gray-400 text-sm">
+            {tierLists.length > 0
+              ? `${tierLists.length}件の検索結果`
+              : '検索結果はありません'}
+          </Text>
+        </View>
+      )}
     </View>
   );
 
@@ -107,7 +175,7 @@ export default function Search() {
           <Text className="text-gray-500">🔍</Text>
           <TextInput
             className="flex-1 text-white text-sm"
-            placeholder="TIER表やカテゴリを検索"
+            placeholder="TIER表を検索"
             placeholderTextColor="#9E9E9E"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -137,7 +205,7 @@ export default function Search() {
           onEndReached={() => hasNextPage && fetchNextPage?.()}
           onEndReachedThreshold={0.5}
           className="flex-1"
-          key={selectedCategory || 'all'}
+          key={`${selectedCategory || 'all'}_${sortBy}_${searchQuery}`}
         />
       )}
     </View>

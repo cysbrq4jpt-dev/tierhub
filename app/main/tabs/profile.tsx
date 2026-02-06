@@ -70,6 +70,14 @@ export default function Profile() {
           <Text className="text-gray-600 text-sm mt-1">bio を設定していません</Text>
         )}
 
+        {/* 編集ボタン */}
+        <TouchableOpacity
+          onPress={() => router.push('/main/profile/edit')}
+          className="mt-3 bg-[#1E1E1E] px-6 py-2 rounded-lg"
+        >
+          <Text className="text-white text-sm font-semibold">プロフィールを編集</Text>
+        </TouchableOpacity>
+
         {/* 統計情報 */}
         <View className="flex-row mt-4 gap-8">
           <View className="items-center">
@@ -99,8 +107,8 @@ export default function Profile() {
       {/* ヘッダー */}
       <View className="flex-row items-center justify-between p-4 border-b border-gray-800">
         <Text className="text-2xl font-bold text-white">Profile</Text>
-        <TouchableOpacity onPress={logout.handleLogout}>
-          <Text className="text-gray-400 text-sm">ログアウト</Text>
+        <TouchableOpacity onPress={() => router.push('/main/settings')}>
+          <Text className="text-2xl">⚙️</Text>
         </TouchableOpacity>
       </View>
 
