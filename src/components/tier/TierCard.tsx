@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TierList, TIER_RANKS } from '@/types/tier.types';
 import { Avatar } from '@/components/common/Avatar';
@@ -19,6 +19,17 @@ export const TierCard: React.FC<TierCardProps> = ({
 
   const handlePress = () => {
     router.push(`/main/tier/${tierList.id}`);
+  };
+
+  const handleShare = async (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+    try {
+      await Share.share({
+        message: `${tierList.title} - TierHub`,
+      });
+    } catch {
+      // User cancelled
+    }
   };
 
   // 各TIERの最初の2つのアイテムを表示用のミニプレビュー
@@ -97,12 +108,19 @@ export const TierCard: React.FC<TierCardProps> = ({
       {renderMiniPreview()}
 
       {/* 統計情報 */}
-      <View className="flex-row mt-2 pt-2 border-t border-gray-700 gap-4">
+      <View className="flex-row mt-2 pt-2 border-t border-gray-700 gap-4 items-center">
         <Text className="text-gray-400 text-xs">♡ {tierList.likesCount || 0}</Text>
         <Text className="text-gray-400 text-xs">💬 {tierList.commentsCount || 0}</Text>
-        <Text className="text-gray-400 text-xs ml-auto">
+        <Text className="text-gray-400 text-xs">
           👁 {tierList.viewsCount || 0}
         </Text>
+        <TouchableOpacity
+          onPress={handleShare}
+          className="ml-auto flex-row items-center gap-1"
+          activeOpacity={0.6}
+        >
+          <Text className="text-gray-400 text-xs">↗ 共有</Text>
+        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );

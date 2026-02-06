@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Share } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useTierList, useIncrementViewCount } from '@/features/tier/hooks/useTierList';
@@ -7,6 +7,7 @@ import { useLikeStatus, useToggleLike } from '@/features/social/hooks/useLike';
 import { TierBoard } from '@/components/tier/TierBoard';
 import { useTierEditorStore } from '@/stores/tierStore';
 import { Avatar } from '@/components/common/Avatar';
+import { ShareButton } from '@/components/social/ShareButton';
 import { TIER_RANKS, TierList } from '@/types/tier.types';
 import { useEffect } from 'react';
 
@@ -14,6 +15,7 @@ export default function TierDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
+  const tierBoardRef = useRef<View>(null);
 
   const { data: tierList, isLoading } = useTierList(id);
   const { data: isLiked } = useLikeStatus('tierList', id);
@@ -35,16 +37,6 @@ export default function TierDetail() {
       targetId: id,
       isLiked: !!isLiked,
     });
-  };
-
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `${tierList?.title || 'TIER表'} - TierHub`,
-      });
-    } catch (error) {
-      // User cancelled
-    }
   };
 
   if (isLoading) {
@@ -73,13 +65,10 @@ export default function TierDetail() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text className="text-primary-500 text-base">← 戻る</Text>
         </TouchableOpacity>
-        <Text className="text-lg font-bold text-white" numberOfLines={1}>
+        <Text className="text-lg font-bold text-white flex-1 mx-3" numberOfLines={1}>
           {tierList.title}
         </Text>
         <View className="flex-row gap-3">
-          <TouchableOpacity onPress={handleShare}>
-            <Text className="text-gray-400 text-base">共有</Text>
-          </TouchableOpacity>
           {isOwner && (
             <TouchableOpacity onPress={() => router.push(`/main/tier/${id}/edit`)}>
               <Text className="text-primary-500 text-base">編集</Text>
@@ -115,8 +104,8 @@ export default function TierDetail() {
           </View>
         )}
 
-        {/* TIER表（読み取り専用） */}
-        <View className="px-2" style={{ minHeight: 400 }}>
+        {/* TIER表（読み取り専用 + 画像キャプチャ用ref） */}
+        <View ref={tierBoardRef} collapsable={false} className="px-2" style={{ minHeight: 400 }}>
           <TierBoardStatic tierList={tierList} />
         </View>
 
@@ -145,6 +134,11 @@ export default function TierDetail() {
           </TouchableOpacity>
 
           <Text className="text-gray-500 text-sm">👁 {tierList.viewsCount || 0}</Text>
+
+          <ShareButton
+            title={tierList.title}
+            viewRef={tierBoardRef}
+          />
         </View>
       </ScrollView>
     </View>

@@ -50,7 +50,7 @@ export default function CreateTierList() {
 
     setIsSaving(true);
     try {
-      await createTierList.mutateAsync({
+      const newTierList = await createTierList.mutateAsync({
         categoryId: 'general', // カテゴリ機能実装時に動的にする
         title: title.trim(),
         description: description.trim(),
@@ -58,7 +58,8 @@ export default function CreateTierList() {
         isPublic: true,
       });
       resetEditor();
-      router.push('/main/tabs');
+      // 作成したTIER表の詳細画面に遷移（すぐに共有できるように）
+      router.replace(`/main/tier/${newTierList.id}`);
     } catch (error) {
       Alert.alert('エラー', 'TIER表の保存に失敗しました。再試行してください。');
     } finally {
