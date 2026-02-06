@@ -5,6 +5,7 @@ export default function MainLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="tabs" />
       <Stack.Screen name="tier" />
+      <Stack.Screen name="matchup" />
       <Stack.Screen name="user" />
       <Stack.Screen name="category" />
       <Stack.Screen name="ranking" />

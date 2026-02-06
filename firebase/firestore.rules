@@ -97,5 +97,52 @@ service cloud.firestore {
       allow update: if isOwner(resource.data.userId);
       allow delete: if isOwner(resource.data.userId);
     }
+
+    // Matchup Tables Collection
+    match /matchupTables/{tableId} {
+      allow read: if resource.data.isPublic == true || isOwner(resource.data.userId);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Patch Versions Collection
+    match /patchVersions/{versionId} {
+      allow read: if true;
+      allow write: if false; // 運営のみ（Admin SDK経由）
+    }
+
+    // Tier List Versions Collection
+    match /tierListVersions/{versionId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // Voting Sessions Collection
+    match /votingSessions/{sessionId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       request.resource.data.hostUserId == request.auth.uid;
+      allow update: if isOwner(resource.data.hostUserId);
+      allow delete: if isOwner(resource.data.hostUserId);
+    }
+
+    // Item Explanations Collection
+    match /itemExplanations/{explanationId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    // Aggregation Cache Collection
+    match /aggregationCache/{cacheId} {
+      allow read: if true;
+      allow write: if false; // Cloud Functions経由
+    }
   }
 }
