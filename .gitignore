@@ -60,6 +60,9 @@ web-build/
 .env
 .env.local
 
+# OpenClaw
+openclaw/.env
+
 # TypeScript
 *.tsbuildinfo
 

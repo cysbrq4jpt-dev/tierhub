@@ -1,0 +1,49 @@
+{
+  "$schema": "https://openclaw.bot/schema/config.json",
+  "gateway": {
+    "port": 18789
+  },
+  "agents": {
+    "main": {
+      "name": "TierHub Bot",
+      "identity": {
+        "emoji": "🦞",
+        "description": "TierHub のパーソナル AI アシスタント"
+      }
+    }
+  },
+  "providers": {
+    "anthropic": {
+      "model": "claude-sonnet-4-20250514"
+    }
+  },
+  "channels": {
+    "discord": {
+      "enabled": false,
+      "token": "${DISCORD_BOT_TOKEN}",
+      "commands": {
+        "native": "auto"
+      },
+      "dmPolicy": "pairing",
+      "historyLimit": 20
+    },
+    "slack": {
+      "enabled": false,
+      "appToken": "${SLACK_APP_TOKEN}",
+      "botToken": "${SLACK_BOT_TOKEN}",
+      "historyLimit": 50,
+      "userTokenReadOnly": true
+    }
+  },
+  "security": {
+    "sandbox": true,
+    "skills": {
+      "exec": {
+        "requireApproval": true
+      },
+      "browser": {
+        "requireApproval": true
+      }
+    }
+  }
+}
