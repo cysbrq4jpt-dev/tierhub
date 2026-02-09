@@ -19,7 +19,7 @@
   },
   "channels": {
     "discord": {
-      "enabled": false,
+      "enabled": true,
       "token": "${DISCORD_BOT_TOKEN}",
       "commands": {
         "native": "auto"
