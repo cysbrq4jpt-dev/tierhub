@@ -99,9 +99,14 @@ export default function Profile() {
       {/* ヘッダー */}
       <View className="flex-row items-center justify-between p-4 border-b border-gray-800">
         <Text className="text-2xl font-bold text-white">Profile</Text>
-        <TouchableOpacity onPress={logout.handleLogout}>
-          <Text className="text-gray-400 text-sm">ログアウト</Text>
-        </TouchableOpacity>
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity onPress={() => router.push('/main/github')}>
+            <Text className="text-blue-400 text-sm">GitHub</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={logout.handleLogout}>
+            <Text className="text-gray-400 text-sm">ログアウト</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (

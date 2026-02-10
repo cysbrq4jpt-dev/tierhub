@@ -8,6 +8,7 @@ export default function MainLayout() {
       <Stack.Screen name="user" />
       <Stack.Screen name="category" />
       <Stack.Screen name="ranking" />
+      <Stack.Screen name="github" />
     </Stack>
   );
 }
